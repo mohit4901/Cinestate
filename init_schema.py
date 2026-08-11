@@ -170,7 +170,20 @@ def init_schema():
 
         # Create database
         client.command("CREATE DATABASE IF NOT EXISTS cinestate")
-        print("✅ Database 'cinestate' ready")
+        # ── Materialized View: Project Analytics Aggregate ────────
+        client.command("""
+        CREATE MATERIALIZED VIEW IF NOT EXISTS cinestate.project_analytics_mv
+        ENGINE = SummingMergeTree()
+        ORDER BY (project_id, event_date)
+        AS SELECT
+            project_id,
+            toDate(created_at) AS event_date,
+            countIf(event_type = 'VIDEO_OBSERVATION') AS total_observations,
+            countIf(event_type = 'CONTINUITY_CONFLICT') AS total_conflicts
+        FROM cinestate.production_events
+        GROUP BY project_id, event_date
+        """)
+        print("✅ Materialized View 8/8: cinestate.project_analytics_mv")
 
         # Create tables
         for i, ddl in enumerate(TABLES, 1):

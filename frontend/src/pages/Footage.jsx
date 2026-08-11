@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Video, Upload, Play, Sparkles, CheckCircle2, AlertTriangle, Activity, Sliders, Shield, Layers } from 'lucide-react';
+import { Video, Upload, Play, Sparkles, CheckCircle2, AlertTriangle, Activity, Sliders, Shield, Layers, FileVideo } from 'lucide-react';
 import { analyzeTake } from '../services/api';
 
 export default function Footage() {
   const [sceneId, setSceneId] = useState('scene_25');
   const [takeId, setTakeId] = useState('take_03');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
 
   const handleAnalyze = async (e) => {
     e.preventDefault();
@@ -17,7 +24,7 @@ export default function Footage() {
         project_id: 'project-aurora',
         scene_id: sceneId,
         take_id: takeId,
-        file_path: './uploads/scene_25_take3.mp4',
+        file_path: selectedFile ? selectedFile.name : './uploads/scene_25_take3.mp4',
       });
       setResult(res);
     } catch (err) {
@@ -43,7 +50,7 @@ export default function Footage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form & Upload Controls */}
+        {/* Form & File Upload Controls */}
         <div className="google-card-light p-6 space-y-4">
           <h3 className="text-xs font-bold text-[#5f6368] uppercase tracking-wider flex items-center gap-2">
             <Upload className="w-4 h-4 text-[#1a73e8]" />
@@ -74,20 +81,27 @@ export default function Footage() {
               </select>
             </div>
 
-            <div className="p-4 rounded-xl border border-dashed border-[#dadce0] bg-[#f8f9fa] text-center space-y-2 font-sans">
-              <Video className="w-8 h-8 text-[#5f6368] mx-auto" />
-              <div className="text-xs text-[#5f6368]">
-                Drag & drop video take file (<code className="text-[#202124]">.mp4, .mov</code>)
+            {/* Drag & Drop File Area */}
+            <div className="p-4 rounded-xl border border-dashed border-[#dadce0] bg-[#f8f9fa] text-center space-y-2 font-sans relative">
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/x-msvideo"
+                onChange={handleFileChange}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+              />
+              <FileVideo className="w-8 h-8 text-[#1a73e8] mx-auto" />
+              <div className="text-xs text-[#202124] font-semibold">
+                {selectedFile ? selectedFile.name : 'Click or Drag & Drop MP4 Video Take'}
               </div>
-              <span className="inline-block px-2.5 py-1 rounded bg-white text-[10px] text-[#1a73e8] font-mono border border-[#dadce0] font-bold">
-                Gemini 2.0 Flash Vision Supported
-              </span>
+              <p className="text-[10px] text-[#5f6368]">
+                Gemini 2.0 Flash multimodal vision analysis
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={analyzing}
-              className="google-btn-blue w-full py-3 text-xs tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50"
+              className="google-btn-blue w-full py-3 text-xs tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
             >
               {analyzing ? (
                 <>
