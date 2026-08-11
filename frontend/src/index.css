@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --g-bg-canvas: #f8f9fa;
+    --g-bg-surface: #ffffff;
+    --g-bg-subtle: #f1f3f4;
+    --g-text-primary: #202124;
+    --g-text-secondary: #5f6368;
+    --g-border: #dadce0;
+    --g-border-subtle: #e8eaed;
+    --g-blue: #1a73e8;
+    --g-blue-hover: #1557b0;
+    --g-cyan: #0288d1;
+    --g-emerald: #137333;
+    --g-emerald-bg: #e6f4ea;
+    --g-rose: #c5221f;
+    --g-rose-bg: #fce8e6;
+    --g-amber: #b06000;
+    --g-amber-bg: #fef7e0;
+  }
+
+  body {
+    background-color: #f8f9fa;
+    color: #202124;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  code, kbd, samp, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom Google Material 3 Light Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}
+
+/* Material 3 Card Styles */
+.google-card-light {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.1), 0 1px 3px 1px rgba(60,64,67,0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.google-card-light:hover {
+  border-color: #bdc1c6;
+  box-shadow: 0 1px 3px 0 rgba(60,64,67,0.2), 0 4px 8px 3px rgba(60,64,67,0.1);
+}
+
+/* Material Buttons */
+.google-btn-blue {
+  background-color: #1a73e8;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+  transition: all 0.15s ease-in-out;
+}
+.google-btn-blue:hover {
+  background-color: #1557b0;
+  box-shadow: 0 2px 6px 0 rgba(60,64,67,0.4);
+}
+
+.google-btn-outlined {
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #dadce0;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+}
+.google-btn-outlined:hover {
+  background-color: #f8f9fa;
+  border-color: #1a73e8;
+}
+
+/* Status Chips */
+.chip-green {
+  background-color: #e6f4ea;
+  color: #137333;
+  border: 1px solid #ceead6;
+}
+
+.chip-red {
+  background-color: #fce8e6;
+  color: #c5221f;
+  border: 1px solid #fad2cf;
+}
+
+.chip-amber {
+  background-color: #fef7e0;
+  color: #b06000;
+  border: 1px solid #feefc3;
+}
+
+.chip-blue {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  border: 1px solid #d2e3fc;
+}
