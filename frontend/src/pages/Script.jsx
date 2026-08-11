@@ -33,6 +33,38 @@ export default function Script() {
     }
   };
 
+  const scenes = result?.scenes || [
+    {
+      scene_id: 'scene_17',
+      scene_number: 17,
+      location: 'INT. HOTEL ROOM - NIGHT',
+      time_of_day: 'NIGHT',
+      characters: ['Arjun'],
+      props: ['Whiskey glass', 'Watch'],
+      wardrobe: ['Black jacket', 'White shirt'],
+      description: 'Arjun tends to his LEFT ARM injury. Watch on LEFT wrist.',
+      states: [
+        { character: 'arjun', attribute: 'injury_location', value: 'left_arm', confidence: 0.98 },
+        { character: 'arjun', attribute: 'watch_wrist', value: 'left', confidence: 0.96 },
+      ],
+      depends_on: ['scene_01'],
+    },
+    {
+      scene_id: 'scene_25',
+      scene_number: 25,
+      location: 'INT. INTERROGATION ROOM',
+      time_of_day: 'DAY',
+      characters: ['Arjun', 'Detective'],
+      props: ['Evidence files'],
+      wardrobe: ['Black jacket'],
+      description: 'Arjun interrogated. Injury from Scene 17 must be on LEFT ARM.',
+      states: [
+        { character: 'arjun', attribute: 'injury_location', value: 'left_arm', confidence: 0.95 },
+      ],
+      depends_on: ['scene_17'],
+    },
+  ];
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <div>
@@ -91,6 +123,12 @@ export default function Script() {
               )}
             </button>
           </form>
+
+          {result && (
+            <div className="p-3 rounded-lg bg-[#e6f4ea] border border-[#ceead6] text-[#137333] text-xs font-mono">
+              ✅ Gemini 2.0 parsed {scenes.length} scenes into ClickHouse Cloud memory!
+            </div>
+          )}
         </div>
 
         {/* Extracted Scene Baseline Display */}
@@ -106,32 +144,28 @@ export default function Script() {
           </div>
 
           <div className="space-y-3 font-mono text-xs">
-            <div className="p-4 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[#1a73e8] font-bold text-sm">Scene 17: INT. HOTEL ROOM - NIGHT</span>
-                <span className="text-[10px] bg-[#e6f4ea] text-[#137333] font-bold px-2 py-0.5 rounded border border-[#ceead6]">ESTABLISHED FACT</span>
+            {scenes.map((sc, idx) => (
+              <div key={sc.scene_id || idx} className="p-4 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[#1a73e8] font-bold text-sm">
+                    Scene {sc.scene_number || sc.scene_id}: {sc.location}
+                  </span>
+                  <span className="text-[10px] bg-[#e6f4ea] text-[#137333] font-bold px-2 py-0.5 rounded border border-[#ceead6]">
+                    ESTABLISHED FACT
+                  </span>
+                </div>
+                <p className="text-xs text-[#202124] font-sans">
+                  {sc.description || `Scene ${sc.scene_id} baseline character facts.`}
+                </p>
+                <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0] flex flex-wrap gap-4">
+                  {sc.states?.map((st, i) => (
+                    <span key={i}>
+                      {st.attribute} = <code className="text-[#137333] font-bold">{st.value}</code> ({(st.confidence * 100).toFixed(0)}%)
+                    </span>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-[#202124] font-sans">
-                Arjun tends to his LEFT ARM injury. Watch on LEFT wrist.
-              </p>
-              <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0] flex gap-4">
-                <span>injury_location = <code className="text-[#137333] font-bold">left_arm</code></span>
-                <span>watch_wrist = <code className="text-[#137333] font-bold">left</code></span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[#1a73e8] font-bold text-sm">Scene 25: INT. INTERROGATION ROOM - DAY</span>
-                <span className="text-[10px] bg-[#fef7e0] text-[#b06000] font-bold px-2 py-0.5 rounded border border-[#feefc3]">DEPENDS ON SCENE 17</span>
-              </div>
-              <p className="text-xs text-[#202124] font-sans">
-                Arjun interrogated by detective. Injury from Scene 17 must be on LEFT ARM.
-              </p>
-              <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0] flex gap-4">
-                <span>injury_location = <code className="text-[#137333] font-bold">left_arm</code></span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

@@ -91,15 +91,14 @@ async def analyze_script(
     file: Optional[UploadFile] = File(None),
 ):
     """
-    Parse screenplay PDF/Text, extract initial scene states into ClickHouse.
+    Parse screenplay PDF/Text using Gemini 2.0 Flash, extract initial scene states into ClickHouse.
     """
     try:
-        content = ""
         if file:
             raw_bytes = await file.read()
-            content = raw_bytes.decode("utf-8", errors="ignore")
-        
-        result = script_agent.analyze_script_text(project_id, content)
+            result = script_agent.analyze_script_file(project_id, raw_bytes, file.filename or "script.pdf")
+        else:
+            result = script_agent.analyze_script_text(project_id, "")
 
         # Store baseline facts in ClickHouse state
         for scene in result.scenes:
