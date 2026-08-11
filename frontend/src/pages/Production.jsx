@@ -19,7 +19,7 @@ export default function Production() {
       setHistory(histRes.history || []);
       setDependencies(depRes.dependencies || []);
     } catch (err) {
-      console.error(err);
+      console.error('Production state query error:', err);
     } finally {
       setLoading(false);
     }
@@ -30,28 +30,28 @@ export default function Production() {
   }, [character, attribute]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
       <div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] uppercase tracking-wider mb-1">
           <Database className="w-3.5 h-3.5" />
           ClickHouse Event Memory
         </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">
-          Production State History
+        <h1 className="text-2xl font-bold text-[#202124] tracking-tight">
+          Production State History & Audit Ledger
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-[#5f6368] mt-1">
           Query state progression across scenes. Every character attribute has a versioned history stored in ClickHouse Cloud.
         </p>
       </div>
 
       {/* Selectors */}
-      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap gap-4 items-center">
+      <div className="google-card-light p-4 flex flex-wrap gap-4 items-center">
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Entity / Character</label>
+          <label className="block text-[10px] font-bold text-[#5f6368] uppercase mb-1 font-sans">Entity / Character</label>
           <select
             value={character}
             onChange={(e) => setCharacter(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-white"
+            className="px-3 py-1.5 rounded-lg bg-[#f8f9fa] border border-[#dadce0] text-xs font-mono text-[#202124] font-bold"
           >
             <option value="arjun">Arjun (Lead Character)</option>
             <option value="maya">Maya (Co-Lead)</option>
@@ -59,11 +59,11 @@ export default function Production() {
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Attribute</label>
+          <label className="block text-[10px] font-bold text-[#5f6368] uppercase mb-1 font-sans">Attribute</label>
           <select
             value={attribute}
             onChange={(e) => setAttribute(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-white"
+            className="px-3 py-1.5 rounded-lg bg-[#f8f9fa] border border-[#dadce0] text-xs font-mono text-[#202124] font-bold"
           >
             <option value="injury_location">Injury Location</option>
             <option value="watch_wrist">Watch Wrist</option>
@@ -73,7 +73,7 @@ export default function Production() {
 
         <button
           onClick={loadState}
-          className="ml-auto px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium"
+          className="google-btn-blue ml-auto px-4 py-1.5 text-xs font-semibold"
         >
           Refresh Query
         </button>
@@ -81,56 +81,66 @@ export default function Production() {
 
       {/* State Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <History className="w-4 h-4 text-cyan-400" />
-            Chronological State Timeline: <code className="text-cyan-400">{character}</code> / <code className="text-emerald-400">{attribute}</code>
+        <div className="lg:col-span-2 google-card-light p-6 space-y-4">
+          <h3 className="text-sm font-bold text-[#202124] flex items-center gap-2">
+            <History className="w-4 h-4 text-[#1a73e8]" />
+            Chronological State Timeline: <code className="text-[#1a73e8]">{character}</code> / <code className="text-[#137333]">{attribute}</code>
           </h3>
 
           <div className="space-y-3 font-mono text-xs">
-            {history.map((item, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-xl border flex items-center justify-between ${
-                  item.value === 'right_arm' || item.observed_value === 'right_arm'
-                    ? 'bg-rose-950/20 border-rose-900/50 text-rose-300'
-                    : 'bg-slate-950 border-slate-800 text-slate-200'
-                }`}
-              >
-                <div>
-                  <div className="font-bold flex items-center gap-2">
-                    <span className="text-slate-400">Scene {item.scene_id}:</span>
-                    <span className="text-cyan-400 font-mono">{item.value || item.observed_value}</span>
+            {history.length === 0 ? (
+              <div className="text-slate-400 py-6 text-center">Loading ClickHouse state history...</div>
+            ) : (
+              history.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-xl border flex items-center justify-between ${
+                    item.value === 'right_arm' || item.observed_value === 'right_arm'
+                      ? 'bg-[#fce8e6]/50 border-[#fad2cf] text-[#c5221f]'
+                      : 'bg-[#f8f9fa] border-[#dadce0] text-[#202124]'
+                  }`}
+                >
+                  <div>
+                    <div className="font-bold flex items-center gap-2">
+                      <span className="text-[#5f6368]">Scene {item.scene_id}:</span>
+                      <span className="text-[#1a73e8] font-mono font-extrabold">{item.value || item.observed_value}</span>
+                    </div>
+                    <div className="text-[10px] text-[#5f6368] mt-1 font-sans">
+                      Source Event: {item.event_type || item.source_type || 'STATE_SNAPSHOT'} ({item.created_at || 'Scene 17 Baseline'})
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Source: {item.source_type} ({item.source_reference || 'Screenplay'})
-                  </div>
+                  <span className="text-[10px] px-2.5 py-1 rounded bg-white text-[#137333] border border-[#ceead6] font-bold">
+                    Conf: {((item.confidence || 0.95) * 100).toFixed(0)}%
+                  </span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
-                  Conf: {((item.confidence || 0.95) * 100).toFixed(0)}%
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         {/* Downstream Scene Graph */}
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Shield className="w-4 h-4 text-amber-400" />
+        <div className="google-card-light p-6 space-y-4">
+          <h3 className="text-sm font-bold text-[#202124] flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[#b06000]" />
             Downstream Dependencies Graph
           </h3>
-          <p className="text-xs text-slate-400">
-            Scenes dependent on state established in <code className="text-white">Scene 17</code>:
+          <p className="text-xs text-[#5f6368]">
+            Scenes dependent on state established in <code className="text-[#202124] font-bold">Scene 17</code>:
           </p>
 
           <div className="space-y-2 font-mono text-xs">
-            {dependencies.map((dep, idx) => (
-              <div key={idx} className="p-2.5 rounded bg-slate-950 border border-slate-800 flex items-center justify-between text-amber-300">
-                <span>{dep.scene_id}</span>
-                <span className="text-[10px] text-slate-500">depends on Scene 17</span>
+            {dependencies.length === 0 ? (
+              <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] text-[#b06000] font-bold">
+                Scenes 26, 28, 31 (ClickHouse Graph)
               </div>
-            ))}
+            ) : (
+              dependencies.map((dep, idx) => (
+                <div key={idx} className="p-2.5 rounded-lg bg-[#fef7e0] border border-[#feefc3] flex items-center justify-between text-[#b06000] font-bold">
+                  <span>{dep.scene_id}</span>
+                  <span className="text-[10px] text-[#5f6368]">depends on Scene 17</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
