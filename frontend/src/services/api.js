@@ -30,6 +30,9 @@ export const getDependencies = (projectId = 'project-aurora', sceneId = 'scene_1
 export const getAuditLogs = (projectId = 'project-aurora') =>
   api.get(`/projects/${projectId}/audit-logs`).then((res) => res.data);
 
+export const searchEvents = (projectId = 'project-aurora', character = '', scene = '', eventType = '') =>
+  api.get(`/projects/${projectId}/search`, { params: { character, scene, event_type: eventType } }).then((res) => res.data);
+
 export const analyzeTake = (data) =>
   api.post('/analyze-take', data).then((res) => res.data);
 
