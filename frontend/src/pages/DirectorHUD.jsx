@@ -287,21 +287,19 @@ export default function DirectorHUD() {
               className={`absolute inset-0 w-full h-full pointer-events-none z-20 ${streamActive ? 'block' : 'hidden'}`}
             />
 
-            {!streamActive && (
-              <div className="absolute inset-0 bg-[#202124] flex flex-col items-center justify-center space-y-3 text-white p-6 text-center z-30">
-                <Camera className="w-12 h-12 text-[#5f6368]" />
-                <div className="text-sm font-semibold">Director Camera Feed Standby</div>
-                <p className="text-xs text-slate-400 max-w-md">
-                  Click <strong>"Connect Live Camera Stream"</strong> to enable real-time Gemini Vision Object Detection.
-                </p>
-                <button
-                  onClick={startCameraStream}
-                  className="gc-btn-primary mt-2 cursor-pointer"
-                >
-                  Start Live Camera Scanner
-                </button>
-              </div>
-            )}
+            <div className={`absolute inset-0 bg-[#202124] flex-col items-center justify-center space-y-3 text-white p-6 text-center z-30 ${!streamActive ? 'flex' : 'hidden'}`}>
+              <Camera className="w-12 h-12 text-[#5f6368]" />
+              <div className="text-sm font-semibold">Director Camera Feed Standby</div>
+              <p className="text-xs text-slate-400 max-w-md">
+                Click <strong>"Connect Live Camera Stream"</strong> to enable real-time Gemini Vision Object Detection.
+              </p>
+              <button
+                onClick={startCameraStream}
+                className="gc-btn-primary mt-2 cursor-pointer"
+              >
+                Start Live Camera Scanner
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2">
