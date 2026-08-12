@@ -104,7 +104,20 @@ async def analyze_live_frame(
             image_bytes = b"dummy"
 
         # 1. Real Gemini 2.0 Flash Vision frame analysis
-        observations = evidence_agent.analyze_live_frame_bytes(image_bytes, "image/jpeg", scene_id)
+        raw_observations = evidence_agent.analyze_live_frame_bytes(image_bytes, "image/jpeg", scene_id)
+
+        # Convert dicts to VisualObservation objects for the state engine
+        observations = []
+        for obs_dict in raw_observations:
+            observations.append(VisualObservation(
+                entity_type=EntityType(obs_dict.get("entity_type", "CHARACTER")),
+                entity_id=obs_dict.get("entity_id", "arjun").lower(),
+                attribute_name=obs_dict.get("attribute_name", "unknown").lower(),
+                value=obs_dict.get("value", "").lower(),
+                confidence=float(obs_dict.get("confidence", 0.95)),
+                timestamp="LIVE",
+                evidence_note=obs_dict.get("evidence_note", "")
+            ))
 
         # 2. Record observations into ClickHouse Cloud
         state_engine.record_observations_as_state(
@@ -199,7 +212,7 @@ async def analyze_live_frame(
         return {
             "success": True,
             "scene_id": scene_id,
-            "observations": [o.model_dump() for o in observations],
+            "observations": raw_observations, # Return raw dicts containing bboxes!
             "conflicts_detected": len(conflicts),
             "conflicts": conflict_data_list,
         }
