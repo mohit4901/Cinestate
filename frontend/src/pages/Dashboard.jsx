@@ -18,14 +18,20 @@ import {
   TrendingDown,
   ChevronRight,
   Sliders,
+  Play,
+  Check,
+  Shield,
+  FileCheck,
 } from 'lucide-react';
-import { getStats, getConflicts, getDependencies } from '../services/api';
+import { getStats, getConflicts, getDependencies, analyzeTake } from '../services/api';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [conflicts, setConflicts] = useState([]);
   const [dependencies, setDependencies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [watchdogRunning, setWatchdogRunning] = useState(false);
+  const [watchdogStep, setWatchdogStep] = useState(0);
   const navigate = useNavigate();
 
   const loadData = async () => {
@@ -50,6 +56,32 @@ export default function Dashboard() {
     loadData();
   }, []);
 
+  const runAutonomousWatchdog = async () => {
+    setWatchdogRunning(true);
+    setWatchdogStep(1); // 1: Ingesting Footage
+
+    setTimeout(() => setWatchdogStep(2), 800); // 2: Gemini Perception
+    setTimeout(() => setWatchdogStep(3), 1600); // 3: ClickHouse Memory Lookup
+    setTimeout(() => setWatchdogStep(4), 2400); // 4: Deterministic Conflict Check
+
+    try {
+      await analyzeTake({
+        project_id: 'project-aurora',
+        scene_id: 'scene_25',
+        take_id: 'take_03',
+        file_path: './uploads/scene_25_take3.mp4',
+      });
+      setTimeout(() => {
+        setWatchdogStep(5); // 5: Conflict Alert Issued
+        loadData();
+      }, 3000);
+    } catch (err) {
+      console.error('Watchdog trigger error:', err);
+    } finally {
+      setTimeout(() => setWatchdogRunning(false), 4000);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Top Google Stream Ticker Bar */}
@@ -57,26 +89,26 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-[#1a73e8] font-bold">
             <span className="w-2 h-2 rounded-full bg-[#1a73e8] animate-ping"></span>
-            CLICKHOUSE STREAM
+            CLICKHOUSE EVENT MEMORY STREAM
           </span>
           <span className="text-[#dadce0]">|</span>
-          <span className="text-[#202124] truncate max-w-2xl font-sans">
-            Latest Event: <code className="text-[#137333] font-bold">VIDEO_OBSERVATION</code> [Scene 25 / Take 3] Arjun injury_location = <code className="text-[#c5221f] font-bold">right_arm</code> (0.93 conf)
+          <span className="text-[#202124] truncate max-w-2xl font-sans font-medium">
+            Proactive Pipeline Watchdog: <code className="text-[#137333] font-bold">VIDEO_OBSERVATION</code> [Scene 25 / Take 3] Arjun injury_location = <code className="text-[#c5221f] font-bold">right_arm</code> (0.93 conf)
           </span>
         </div>
         <div className="flex items-center gap-4 text-[11px] text-[#5f6368]">
           <span>Latency: <strong className="text-[#137333]">12ms</strong></span>
-          <span>Engine: <strong className="text-[#1a73e8]">mcp-clickhouse</strong></span>
+          <span>MCP Server: <strong className="text-[#1a73e8]">mcp-clickhouse</strong></span>
         </div>
       </div>
 
-      {/* Main Google Cloud Studio Header Banner */}
+      {/* Main Google Cloud Studio Executive Header Banner */}
       <div className="google-card-light p-8 relative overflow-hidden bg-gradient-to-r from-white via-white to-[#e8f0fe]/40">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-[#1a73e8] uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-[#1a73e8]" />
-              Autonomous Production State Machine • Google ADK + ClickHouse Cloud
+              <Zap className="w-4 h-4 text-[#1a73e8]" />
+              AUTONOMOUS CONTINUITY OPERATING SYSTEM • GOOGLE ADK + CLICKHOUSE CLOUD
             </div>
             <h1 className="text-3xl font-extrabold text-[#202124] tracking-tight flex items-center gap-3">
               CINESTATE Executive Control Station
@@ -85,34 +117,58 @@ export default function Dashboard() {
               </span>
             </h1>
             <p className="text-sm text-[#5f6368] max-w-3xl leading-relaxed">
-              Real-time multi-agent continuity intelligence. Gemini 2.0 Flash extracts visual attributes from video takes, while ClickHouse Cloud maintains versioned character state memory to catch reshoot-causing errors before wraps.
+              CINESTATE doesn't wait for a continuity error to be discovered in post-production. It detects state-breaking evidence as soon as new footage enters the production pipeline, offloading state checks to ClickHouse Cloud.
             </p>
           </div>
 
+          {/* Action Trigger Buttons */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
-              onClick={loadData}
-              className="p-3 rounded-xl bg-white hover:bg-[#f8f9fa] text-[#5f6368] transition border border-[#dadce0] shadow-xs"
-              title="Refresh ClickHouse Data"
+              onClick={runAutonomousWatchdog}
+              disabled={watchdogRunning}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#1a73e8] to-[#0288d1] hover:from-[#1557b0] hover:to-[#01579b] text-white font-extrabold text-xs tracking-wider shadow-md flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <Zap className={`w-4 h-4 ${watchdogRunning ? 'animate-bounce text-amber-300' : ''}`} />
+              {watchdogRunning ? 'WATCHDOG RUNNING PIPELINE...' : 'SIMULATE LIVE FOOTAGE INGESTION'}
             </button>
-            <button
-              onClick={() => navigate('/footage')}
-              className="google-btn-outlined px-4 py-3 text-xs tracking-wide flex items-center gap-2"
-            >
-              <Video className="w-4 h-4 text-[#1a73e8]" />
-              Inspect Video Take
-            </button>
+
             <button
               onClick={() => navigate('/conflicts')}
-              className="px-5 py-3 rounded-xl bg-[#c5221f] hover:bg-[#a50e0e] text-white font-bold text-xs tracking-wider shadow-md border border-rose-600 flex items-center gap-2.5 transition animate-pulse"
+              className="px-5 py-3 rounded-xl bg-[#c5221f] hover:bg-[#a50e0e] text-white font-bold text-xs tracking-wider shadow-md border border-rose-600 flex items-center gap-2.5 transition animate-pulse cursor-pointer"
             >
               <AlertTriangle className="w-4 h-4 text-white" />
               CONFLICT CENTER (1 HIGH SEVERITY)
             </button>
           </div>
         </div>
+
+        {/* 🔥 AUTONOMOUS WATCHDOG PIPELINE STEP EXPLORER */}
+        {watchdogRunning && (
+          <div className="mt-6 p-4 rounded-xl bg-white border border-[#d2e3fc] space-y-3 font-mono text-xs shadow-sm">
+            <div className="text-xs font-bold text-[#1a73e8] uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#1a73e8] animate-spin" />
+              AUTONOMOUS CONTINUITY WATCHDOG INGESTION STREAM
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+              <div className={`p-2.5 rounded-lg border text-center ${watchdogStep >= 1 ? 'bg-[#e8f0fe] border-[#1a73e8] text-[#1a73e8] font-bold' : 'bg-[#f8f9fa] border-[#dadce0] text-[#5f6368]'}`}>
+                1. FOOTAGE INGEST
+              </div>
+              <div className={`p-2.5 rounded-lg border text-center ${watchdogStep >= 2 ? 'bg-[#e8f0fe] border-[#1a73e8] text-[#1a73e8] font-bold' : 'bg-[#f8f9fa] border-[#dadce0] text-[#5f6368]'}`}>
+                2. GEMINI VISION
+              </div>
+              <div className={`p-2.5 rounded-lg border text-center ${watchdogStep >= 3 ? 'bg-[#e8f0fe] border-[#1a73e8] text-[#1a73e8] font-bold' : 'bg-[#f8f9fa] border-[#dadce0] text-[#5f6368]'}`}>
+                3. CLICKHOUSE LOOKUP
+              </div>
+              <div className={`p-2.5 rounded-lg border text-center ${watchdogStep >= 4 ? 'bg-[#e8f0fe] border-[#1a73e8] text-[#1a73e8] font-bold' : 'bg-[#f8f9fa] border-[#dadce0] text-[#5f6368]'}`}>
+                4. STATE COMPARISON
+              </div>
+              <div className={`p-2.5 rounded-lg border text-center ${watchdogStep >= 5 ? 'bg-[#fce8e6] border-[#c5221f] text-[#c5221f] font-bold' : 'bg-[#f8f9fa] border-[#dadce0] text-[#5f6368]'}`}>
+                5. DIRECTOR ALERT
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Metric Cards Row */}
@@ -225,7 +281,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Feature: Interactive Visual Blast Radius & Conflict Showcase */}
+      {/* Main Feature: Interactive Visual Blast Radius 2.0 & Evidence Showcase */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Columns: Visual Scene Graph & Blast Radius Canvas */}
         <div className="lg:col-span-2 google-card-light p-6 flex flex-col justify-between space-y-6">
@@ -234,7 +290,7 @@ export default function Dashboard() {
               <div>
                 <h3 className="text-base font-bold text-[#202124] flex items-center gap-2">
                   <Layers className="w-5 h-5 text-[#1a73e8]" />
-                  Visual Scene Dependency Graph & Cascading Blast Radius
+                  Blast Radius 2.0 — Production Dependency Tree
                 </h3>
                 <p className="text-xs text-[#5f6368] mt-0.5">
                   ClickHouse `scene_dependencies` graph maps state dependencies across scenes.
@@ -248,9 +304,9 @@ export default function Dashboard() {
             {/* Interactive Timeline Graph Simulation */}
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-3">
-                <div className="text-xs font-bold text-[#5f6368] uppercase tracking-wider flex justify-between">
-                  <span>SCENE TIMELINE & STATE CASCADE FLOW</span>
-                  <span className="text-[#1a73e8] font-mono">Arjun / injury_location</span>
+                <div className="text-xs font-bold text-[#5f6368] uppercase tracking-wider flex justify-between font-mono">
+                  <span>PRODUCTION MEMORY TIMELINE & CASCADING IMPACT</span>
+                  <span className="text-[#1a73e8]">Arjun / injury_location</span>
                 </div>
 
                 {/* Nodes Display */}
@@ -259,7 +315,7 @@ export default function Dashboard() {
                   <div className="p-3 rounded-lg bg-[#e6f4ea] border border-[#ceead6] text-center space-y-1">
                     <div className="text-[10px] text-[#137333] font-bold">SCENE 17</div>
                     <div className="text-[11px] font-extrabold text-[#202124]">left_arm</div>
-                    <div className="text-[9px] text-[#137333] font-semibold">ESTABLISHED FACT</div>
+                    <div className="text-[9px] text-[#137333] font-semibold">FACT (98%)</div>
                   </div>
 
                   {/* Scene 21 */}
@@ -273,21 +329,21 @@ export default function Dashboard() {
                   <div className="p-3 rounded-lg bg-[#fce8e6] border-2 border-[#c5221f] text-center space-y-1">
                     <div className="text-[10px] text-[#c5221f] font-bold">SCENE 25 (T3)</div>
                     <div className="text-[11px] font-extrabold text-[#c5221f]">right_arm</div>
-                    <div className="text-[9px] bg-[#c5221f] text-white font-bold rounded px-1">MISMATCH!</div>
+                    <div className="text-[9px] bg-[#c5221f] text-white font-bold rounded px-1">CONFLICT!</div>
                   </div>
 
                   {/* Scene 26 (Affected) */}
                   <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] text-center space-y-1">
                     <div className="text-[10px] text-[#b06000] font-bold">SCENE 26</div>
                     <div className="text-[11px] text-[#b06000] font-bold">left_arm</div>
-                    <div className="text-[9px] text-[#b06000]">CASCADE BROKEN</div>
+                    <div className="text-[9px] text-[#b06000]">AFFECTED</div>
                   </div>
 
                   {/* Scene 28 & 31 (Affected) */}
                   <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] text-center space-y-1">
                     <div className="text-[10px] text-[#b06000] font-bold">SCENES 28, 31</div>
                     <div className="text-[11px] text-[#b06000] font-bold">left_arm</div>
-                    <div className="text-[9px] text-[#b06000]">CASCADE BROKEN</div>
+                    <div className="text-[9px] text-[#c5221f] font-bold">CRITICAL BREAK</div>
                   </div>
                 </div>
               </div>
@@ -301,7 +357,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-2xl font-extrabold text-[#202124] font-mono">$1,500</div>
                   <p className="text-xs text-[#5f6368]">
-                    Reshoot Take 3 immediately while actor & set lighting are still active. Zero schedule delay.
+                    Reshoot Take 3 immediately while actor & set lighting are active. Zero schedule delay.
                   </p>
                 </div>
 
@@ -312,7 +368,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-2xl font-extrabold text-[#c5221f] font-mono">$45,000+</div>
                   <p className="text-xs text-[#5f6368]">
-                    Paint out bandage digitally across 4 scenes + 3-week post-production delay risk.
+                    Paint out bandage digitally across 3 downstream scenes + 3-week post-production delay risk.
                   </p>
                 </div>
               </div>
@@ -325,9 +381,9 @@ export default function Dashboard() {
             </span>
             <button
               onClick={() => navigate('/conflicts')}
-              className="google-btn-blue px-5 py-2.5 text-xs tracking-wide flex items-center gap-2"
+              className="google-btn-blue px-5 py-2.5 text-xs tracking-wide flex items-center gap-2 cursor-pointer"
             >
-              Open Conflict Inspection & Approval
+              Open Conflict Inspection & Action Planner
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -385,7 +441,7 @@ export default function Dashboard() {
 
           <button
             onClick={() => navigate('/footage')}
-            className="google-btn-outlined w-full py-2.5 text-center text-xs tracking-wide"
+            className="google-btn-outlined w-full py-2.5 text-center text-xs tracking-wide cursor-pointer"
           >
             Launch Full Take Inspector
           </button>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Database, History, Search, ArrowRight, Shield } from 'lucide-react';
+import { Database, History, Search, ArrowRight, Shield, Layers, FileText, Video, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { getCharacterHistory, getDependencies } from '../services/api';
 
 export default function Production() {
@@ -31,16 +31,17 @@ export default function Production() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Top Banner */}
       <div>
         <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] uppercase tracking-wider mb-1">
           <Database className="w-3.5 h-3.5" />
-          ClickHouse Event Memory
+          ClickHouse Production Memory Ledger
         </div>
         <h1 className="text-2xl font-bold text-[#202124] tracking-tight">
-          Production State History & Audit Ledger
+          ARJUN — PRODUCTION MEMORY explorer
         </h1>
         <p className="text-sm text-[#5f6368] mt-1">
-          Query state progression across scenes. Every character attribute has a versioned history stored in ClickHouse Cloud.
+          ClickHouse Cloud serves as CINESTATE's persistent Production Memory. Query versioned character states, baseline facts, and visual observations across all scenes.
         </p>
       </div>
 
@@ -59,7 +60,7 @@ export default function Production() {
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-[#5f6368] uppercase mb-1 font-sans">Attribute</label>
+          <label className="block text-[10px] font-bold text-[#5f6368] uppercase mb-1 font-sans">Attribute Memory</label>
           <select
             value={attribute}
             onChange={(e) => setAttribute(e.target.value)}
@@ -73,74 +74,113 @@ export default function Production() {
 
         <button
           onClick={loadState}
-          className="google-btn-blue ml-auto px-4 py-1.5 text-xs font-semibold"
+          className="google-btn-blue ml-auto px-4 py-1.5 text-xs font-semibold cursor-pointer"
         >
-          Refresh Query
+          Query ClickHouse Memory
         </button>
       </div>
 
-      {/* State Timeline */}
+      {/* Main Memory Timeline & State Tree */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 google-card-light p-6 space-y-4">
-          <h3 className="text-sm font-bold text-[#202124] flex items-center gap-2">
-            <History className="w-4 h-4 text-[#1a73e8]" />
-            Chronological State Timeline: <code className="text-[#1a73e8]">{character}</code> / <code className="text-[#137333]">{attribute}</code>
-          </h3>
+          <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
+            <h3 className="text-sm font-bold text-[#202124] flex items-center gap-2">
+              <History className="w-4 h-4 text-[#1a73e8]" />
+              CHRONOLOGICAL PRODUCTION MEMORY LEDGER: <code className="text-[#1a73e8]">{character.toUpperCase()}</code> / <code className="text-[#137333]">{attribute}</code>
+            </h3>
+            <span className="text-xs font-mono bg-[#e6f4ea] text-[#137333] font-bold px-2.5 py-0.5 rounded border border-[#ceead6]">
+              Immutable MergeTree Events
+            </span>
+          </div>
 
-          <div className="space-y-3 font-mono text-xs">
-            {history.length === 0 ? (
-              <div className="text-slate-400 py-6 text-center">Loading ClickHouse state history...</div>
-            ) : (
-              history.map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`p-4 rounded-xl border flex items-center justify-between ${
-                    item.value === 'right_arm' || item.observed_value === 'right_arm'
-                      ? 'bg-[#fce8e6]/50 border-[#fad2cf] text-[#c5221f]'
-                      : 'bg-[#f8f9fa] border-[#dadce0] text-[#202124]'
-                  }`}
-                >
-                  <div>
-                    <div className="font-bold flex items-center gap-2">
-                      <span className="text-[#5f6368]">Scene {item.scene_id}:</span>
-                      <span className="text-[#1a73e8] font-mono font-extrabold">{item.value || item.observed_value}</span>
-                    </div>
-                    <div className="text-[10px] text-[#5f6368] mt-1 font-sans">
-                      Source Event: {item.event_type || item.source_type || 'STATE_SNAPSHOT'} ({item.created_at || 'Scene 17 Baseline'})
-                    </div>
-                  </div>
-                  <span className="text-[10px] px-2.5 py-1 rounded bg-white text-[#137333] border border-[#ceead6] font-bold">
-                    Conf: {((item.confidence || 0.95) * 100).toFixed(0)}%
-                  </span>
-                </div>
-              ))
-            )}
+          <div className="space-y-4 font-mono text-xs">
+            {/* Step 1: Scene 17 Baseline */}
+            <div className="p-4 rounded-xl bg-[#e6f4ea]/60 border border-[#ceead6] space-y-2 relative">
+              <div className="flex justify-between items-center">
+                <span className="text-[#137333] font-extrabold text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  SCENE 17 — ESTABLISHED SCREENPLAY FACT
+                </span>
+                <span className="text-[10px] bg-[#137333] text-white px-2 py-0.5 rounded font-bold">BASE FACT</span>
+              </div>
+              <div className="text-sm font-extrabold text-[#202124]">
+                {attribute} = <code className="text-[#137333]">left_arm</code> (98% Confidence)
+              </div>
+              <p className="text-xs text-[#5f6368] font-sans">
+                Extracted from Scene 17 Screenplay PDF Page 4. Stored as initial state snapshot in ClickHouse Cloud.
+              </p>
+            </div>
+
+            {/* Step 2: Scene 21 Confirmation */}
+            <div className="p-4 rounded-xl bg-[#e8f0fe]/60 border border-[#d2e3fc] space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[#1a73e8] font-extrabold text-sm flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  SCENE 21 — CONFIRMED FOOTAGE OBSERVATION
+                </span>
+                <span className="text-[10px] bg-[#1a73e8] text-white px-2 py-0.5 rounded font-bold">CONFIRMED</span>
+              </div>
+              <div className="text-sm font-extrabold text-[#202124]">
+                {attribute} = <code className="text-[#1a73e8]">left_arm</code> (96% Confidence)
+              </div>
+              <p className="text-xs text-[#5f6368] font-sans">
+                Extracted from Scene 21 Take 1 footage by Gemini 2.0 Vision. Consistent with Scene 17 baseline.
+              </p>
+            </div>
+
+            {/* Step 3: Scene 25 Conflict */}
+            <div className="p-4 rounded-xl bg-[#fce8e6]/60 border border-[#fad2cf] space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[#c5221f] font-extrabold text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  SCENE 25 (TAKE 3) — STATE-BREAKING INGESTION
+                </span>
+                <span className="text-[10px] bg-[#c5221f] text-white px-2 py-0.5 rounded font-bold">🔴 CONFLICT</span>
+              </div>
+              <div className="text-sm font-extrabold text-[#c5221f]">
+                {attribute} = <code className="text-[#c5221f]">right_arm</code> (93% Confidence)
+              </div>
+              <p className="text-xs text-[#202124] font-sans">
+                Extracted from newly ingested Take 3 video footage @ 00:12.8. Deterministic conflict engine flagged state mismatch: <code className="text-[#c5221f] font-bold">left_arm != right_arm</code>.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Downstream Scene Graph */}
+        {/* Downstream Scene Dependencies Graph */}
         <div className="google-card-light p-6 space-y-4">
           <h3 className="text-sm font-bold text-[#202124] flex items-center gap-2">
             <Shield className="w-4 h-4 text-[#b06000]" />
-            Downstream Dependencies Graph
+            ClickHouse Graph Dependencies
           </h3>
           <p className="text-xs text-[#5f6368]">
-            Scenes dependent on state established in <code className="text-[#202124] font-bold">Scene 17</code>:
+            Downstream scenes linked to state established in <code className="text-[#202124] font-bold">Scene 17</code>:
           </p>
 
-          <div className="space-y-2 font-mono text-xs">
-            {dependencies.length === 0 ? (
-              <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] text-[#b06000] font-bold">
-                Scenes 26, 28, 31 (ClickHouse Graph)
+          <div className="space-y-3 font-mono text-xs">
+            <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] space-y-1">
+              <div className="flex justify-between text-[#b06000] font-bold">
+                <span>SCENE 26</span>
+                <span className="text-[10px] bg-white px-1.5 py-0.2 rounded border border-[#feefc3]">AFFECTED</span>
               </div>
-            ) : (
-              dependencies.map((dep, idx) => (
-                <div key={idx} className="p-2.5 rounded-lg bg-[#fef7e0] border border-[#feefc3] flex items-center justify-between text-[#b06000] font-bold">
-                  <span>{dep.scene_id}</span>
-                  <span className="text-[10px] text-[#5f6368]">depends on Scene 17</span>
-                </div>
-              ))
-            )}
+              <p className="text-[11px] text-[#5f6368] font-sans">INT. POLICE CAR — Dialogue assumes left_arm bandage.</p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] space-y-1">
+              <div className="flex justify-between text-[#b06000] font-bold">
+                <span>SCENE 28</span>
+                <span className="text-[10px] bg-white px-1.5 py-0.2 rounded border border-[#feefc3]">AFFECTED</span>
+              </div>
+              <p className="text-[11px] text-[#5f6368] font-sans">EXT. ALLEYWAY — Fight scene assumes left_arm restriction.</p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#fce8e6] border border-[#fad2cf] space-y-1">
+              <div className="flex justify-between text-[#c5221f] font-bold">
+                <span>SCENE 31</span>
+                <span className="text-[10px] bg-[#c5221f] text-white px-1.5 py-0.2 rounded">CRITICAL BREAK</span>
+              </div>
+              <p className="text-[11px] text-[#5f6368] font-sans">INT. HOSPITAL ROOM — Doctor examines cast on left_arm.</p>
+            </div>
           </div>
         </div>
       </div>

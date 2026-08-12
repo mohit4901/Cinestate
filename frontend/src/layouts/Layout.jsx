@@ -17,10 +17,14 @@ import {
   ExternalLink,
   ChevronDown,
   CheckCircle,
+  Play,
+  X,
+  Clock,
 } from 'lucide-react';
 
 export default function Layout() {
   const [activeScenario, setActiveScenario] = useState('scenario_a');
+  const [showDemoGuide, setShowDemoGuide] = useState(false);
 
   const navItems = [
     { path: '/dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -154,7 +158,15 @@ export default function Layout() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowDemoGuide(true)}
+              className="px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-[#e8f0fe] hover:bg-[#d2e3fc] text-[#1a73e8] border border-[#d2e3fc] flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            >
+              <Play className="w-3.5 h-3.5 fill-[#1a73e8]" />
+              3-MINUTE WINNING PITCH DEMO FLOW
+            </button>
+
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#137333] animate-ping"></span>
               ClickHouse Cloud Connected
@@ -168,11 +180,91 @@ export default function Layout() {
               rel="noreferrer"
               className="text-xs text-[#5f6368] hover:text-[#1a73e8] flex items-center gap-1 transition font-semibold"
             >
-              Open Source GitHub Repo
+              GitHub Repo
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </header>
+
+        {/* 🎥 3-MINUTE WINNING PITCH DEMO GUIDE MODAL */}
+        {showDemoGuide && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="google-card-light max-w-2xl w-full p-6 space-y-4 relative shadow-2xl">
+              <button
+                onClick={() => setShowDemoGuide(false)}
+                className="absolute top-4 right-4 text-[#5f6368] hover:text-[#202124] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1a73e8]">
+                <Clock className="w-4 h-4" />
+                3-MINUTE JUDGE DEMO FLOW (180-SECOND WINNING PITCH)
+              </div>
+
+              <div className="space-y-3 font-sans text-xs">
+                <div className="p-3 rounded-lg bg-[#e8f0fe] border border-[#d2e3fc] space-y-1">
+                  <div className="font-bold text-[#1a73e8] flex justify-between">
+                    <span>0:00 – 0:30 | Screenplay Baseline (`/script`)</span>
+                    <span>Gemini 2.0 PDF Vision</span>
+                  </div>
+                  <p className="text-[#5f6368]">
+                    Show screenplay parsing. Explain how Gemini 2.0 Flash extracts Scene 17 baseline fact: <strong>Arjun injury = Left Arm (98% Conf)</strong> and stores it in ClickHouse.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#f8f9fa] border border-[#dadce0] space-y-1">
+                  <div className="font-bold text-[#202124] flex justify-between">
+                    <span>0:30 – 1:00 | Autonomous Watchdog Ingestion (`/dashboard`)</span>
+                    <span>Proactive Agents</span>
+                  </div>
+                  <p className="text-[#5f6368]">
+                    Click <strong>"SIMULATE LIVE FOOTAGE INGESTION"</strong>. Show how CINESTATE automatically evaluates new footage as soon as it arrives from the set camera card.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#fce8e6] border border-[#fad2cf] space-y-1">
+                  <div className="font-bold text-[#c5221f] flex justify-between">
+                    <span>1:00 – 1:40 | Evidence Chain & Conflict (`/conflicts`)</span>
+                    <span>Anti-Hallucination</span>
+                  </div>
+                  <p className="text-[#5f6368]">
+                    Show Scene 25 Take 3: Observed Right Arm @ 00:12.8. Highlight the Evidence Chain Card proving zero LLM hallucination.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#fef7e0] border border-[#feefc3] space-y-1">
+                  <div className="font-bold text-[#b06000] flex justify-between">
+                    <span>1:40 – 2:20 | Blast Radius 2.0 & Cost Matrix (`/conflicts`)</span>
+                    <span>ClickHouse Graph</span>
+                  </div>
+                  <p className="text-[#5f6368]">
+                    Show ClickHouse dependency tree affecting Scenes 26, 28, 31. Explain financial risk: <strong>$1,500 immediate reshoot vs $45,000 post-VFX fix</strong>.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#e6f4ea] border border-[#ceead6] space-y-1">
+                  <div className="font-bold text-[#137333] flex justify-between">
+                    <span>2:20 – 3:00 | Action Planner & MCP Proof (`/agents`)</span>
+                    <span>mcp-clickhouse Protocol</span>
+                  </div>
+                  <p className="text-[#5f6368]">
+                    Click <strong>"Execute Option A Reshoot"</strong>. Open Agent Topology tab showing node trace drawer and raw `mcp-clickhouse` JSON-RPC messages.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 text-right">
+                <button
+                  onClick={() => setShowDemoGuide(false)}
+                  className="google-btn-blue px-5 py-2 text-xs font-semibold cursor-pointer"
+                >
+                  Start Demo Pitch
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Page Main Content */}
         <main className="flex-1 overflow-y-auto p-6 bg-[#f8f9fa]">
