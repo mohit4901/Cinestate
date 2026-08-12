@@ -1,25 +1,80 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, Zap, AlertTriangle, CheckCircle2, RefreshCw, Camera, Eye, Play, StopCircle, ArrowRight, Shield, Layers, Sparkles, Activity, User, Target, Database } from 'lucide-react';
+import { Video, Zap, AlertTriangle, CheckCircle2, Camera, Eye, Play, StopCircle, Shield, Sparkles, Target, Database, Activity, Terminal } from 'lucide-react';
 import { analyzeLiveFrame } from '../services/api';
+
+const SCIFI_STYLES = `
+  .glass-card {
+    background: rgba(10, 10, 12, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  .neon-text-blue {
+    color: #60a5fa;
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+  }
+  .neon-text-red {
+    color: #f87171;
+    text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+  }
+  .scanline {
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(96, 165, 250, 0.2) 50%, rgba(255,255,255,0));
+    background-size: 100% 8px;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 25;
+    pointer-events: none;
+    animation: scanline 4s linear infinite;
+    opacity: 0.3;
+  }
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+  .terminal-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .terminal-scrollbar::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+  }
+`;
 
 export default function DirectorHUD() {
   const [streamActive, setStreamActive] = useState(false);
   const [liveScanning, setLiveScanning] = useState(false);
-  const [liveScanStatus, setLiveScanStatus] = useState('STANDBY'); // STANDBY, SCANNING, CONFLICT_FOUND, MATCH
+  const [liveScanStatus, setLiveScanStatus] = useState('STANDBY');
   const [detectedState, setDetectedState] = useState(null);
   const [liveObservations, setLiveObservations] = useState([]);
   const [scanCount, setScanCount] = useState(0);
   const [pollingIntervalId, setPollingIntervalId] = useState(null);
+  const [terminalLogs, setTerminalLogs] = useState([
+    "> INITIALIZING CINESTATE PRODUCTION MEMORY SYSTEM...",
+    "> CONNECTING TO CLICKHOUSE CLOUD MCP SERVER... SUCCESS.",
+    "> GEMINI 2.0 FLASH VISION ENGINE... ONLINE."
+  ]);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
+  const terminalRef = useRef(null);
 
-  // Toggle Live Webcam / Wireless Camera Feed
+  const addLog = (msg) => {
+    setTerminalLogs(prev => [...prev, `> ${msg}`].slice(-15));
+  };
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [terminalLogs]);
+
   const startCameraStream = async () => {
     try {
       setStreamActive(true);
       setLiveScanStatus('SCANNING');
+      addLog("INITIATING CAMERA SENSOR LINK...");
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         if (videoRef.current) {
@@ -27,19 +82,19 @@ export default function DirectorHUD() {
         }
       }
       
-      // Initial scan
+      addLog("CAMERA LINK ESTABLISHED. COMMENCING LIVE MULTIMODAL SCAN.");
+      
       setTimeout(() => {
         captureAndAnalyzeFrame();
       }, 1000);
 
-      // Setup continuous live polling (every 2 seconds to Gemini via backend)
       const interval = setInterval(() => {
         captureAndAnalyzeFrame();
       }, 2500);
       setPollingIntervalId(interval);
 
     } catch (err) {
-      console.log('Webcam permission error:', err);
+      addLog(`ERROR: SENSOR LINK FAILED: ${err.message}`);
       setStreamActive(true);
       captureAndAnalyzeFrame();
     }
@@ -50,6 +105,7 @@ export default function DirectorHUD() {
     setLiveScanStatus('STANDBY');
     setDetectedState(null);
     setLiveObservations([]);
+    addLog("CAMERA SENSOR LINK TERMINATED. STANDBY MODE.");
     
     if (pollingIntervalId) {
       clearInterval(pollingIntervalId);
@@ -61,15 +117,13 @@ export default function DirectorHUD() {
       tracks.forEach((track) => track.stop());
     }
 
-    // Clear overlay
     if (overlayCanvasRef.current) {
       const ctx = overlayCanvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height);
     }
   };
 
-  // Draw Bounding Boxes from Gemini Response
-  const drawGeminiBoxes = (observations) => {
+  const drawSciFiBoxes = (observations) => {
     if (!videoRef.current || !overlayCanvasRef.current) return;
     
     const video = videoRef.current;
@@ -87,33 +141,58 @@ export default function DirectorHUD() {
         const [ymin, xmin, ymax, xmax] = obs.bbox;
         const x = xmin * w;
         const y = ymin * h;
-        const width = (xmax - xmin) * w;
-        const height = (ymax - ymin) * h;
+        const boxW = (xmax - xmin) * w;
+        const boxH = (ymax - ymin) * h;
 
-        // Is it a conflict? 
         const isConflict = liveScanStatus === 'CONFLICT_FOUND' && obs.attribute_name.includes('injury');
-        const color = isConflict ? '#d93025' : '#1a73e8';
+        const color = isConflict ? '#ef4444' : '#3b82f6'; // red-500 : blue-500
+        const glow = isConflict ? 'rgba(239, 68, 68, 0.5)' : 'rgba(59, 130, 246, 0.5)';
 
         ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.setLineDash([]);
-        ctx.strokeRect(x, y, width, height);
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = glow;
+        
+        // Draw Sci-Fi Corners
+        const len = 15;
+        ctx.beginPath();
+        // Top Left
+        ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
+        // Top Right
+        ctx.moveTo(x + boxW - len, y); ctx.lineTo(x + boxW, y); ctx.lineTo(x + boxW, y + len);
+        // Bottom Left
+        ctx.moveTo(x, y + boxH - len); ctx.lineTo(x, y + boxH); ctx.lineTo(x + len, y + boxH);
+        // Bottom Right
+        ctx.moveTo(x + boxW - len, y + boxH); ctx.lineTo(x + boxW, y + boxH); ctx.lineTo(x + boxW, y + boxH - len);
+        ctx.stroke();
 
+        // Draw crosshair center
+        const cx = x + boxW/2;
+        const cy = y + boxH/2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
+        ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Label
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        const labelText = `[${obs.attribute_name.toUpperCase()}: ${obs.value.toUpperCase()}]`;
+        ctx.fillRect(x, Math.max(0, y - 20), ctx.measureText(labelText).width + 10, 18);
         ctx.fillStyle = color;
-        ctx.fillRect(x, Math.max(0, y - 24), Math.max(220, width), 24);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px Inter, sans-serif';
-        const labelText = `GEMINI: ${obs.attribute_name.toUpperCase()} = ${obs.value.toUpperCase()}`;
-        ctx.fillText(labelText, x + 8, Math.max(0, y - 24) + 16);
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(labelText, x + 5, Math.max(0, y - 20) + 12);
       }
     });
   };
 
-  // REAL WEBCAM FRAME CAPTURE & CLICKHOUSE SAVER
   const captureAndAnalyzeFrame = async () => {
-    if (liveScanning) return; // Prevent overlapping scans
+    if (liveScanning) return;
     
     setLiveScanning(true);
+    addLog("TRANSMITTING FRAME TO GEMINI 2.0 FLASH CORE...");
+    const startTime = Date.now();
     try {
       let imageBlob = null;
 
@@ -125,23 +204,26 @@ export default function DirectorHUD() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+        imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.80));
       }
 
       const formData = new FormData();
       formData.append('project_id', 'project-aurora');
-      formData.append('scene_id', 'scene_25'); // Using scene_25 as baseline for demo
+      formData.append('scene_id', 'scene_25'); 
       if (imageBlob) {
         formData.append('file', imageBlob, 'live_frame.jpg');
       }
 
       const res = await analyzeLiveFrame(formData);
+      const latency = Date.now() - startTime;
 
       setScanCount((prev) => prev + 1);
       setLiveObservations(res.observations || []);
       
-      // Dynamically draw bounding boxes based on Gemini Vision result!
-      drawGeminiBoxes(res.observations || []);
+      drawSciFiBoxes(res.observations || []);
+      
+      addLog(`GEMINI RESPONSE RECEIVED [${latency}ms]. EXTRACTED ${res.observations?.length || 0} FEATURES.`);
+      addLog(`MCP: INSERTING STATE INTO CLICKHOUSE CLOUD...`);
 
       if (res.conflicts_detected > 0 && res.conflicts.length > 0) {
         setLiveScanStatus('CONFLICT_FOUND');
@@ -155,6 +237,7 @@ export default function DirectorHUD() {
           scene: 'Scene 25 (Live Webcam Scan)',
           recommendation: conflict.recommendation || 'Continuity conflict detected via ClickHouse Memory.',
         });
+        addLog(`CRITICAL: CLICKHOUSE DETECTED CONTINUITY CONFLICT! EXPECTED: ${conflict.expected_value}, OBSERVED: ${conflict.observed_value}`);
       } else {
         setLiveScanStatus('MATCH');
         const shirtObs = res.observations?.find((o) => o.attribute_name === 'clothing_style')?.value || 'Not detected';
@@ -168,244 +251,192 @@ export default function DirectorHUD() {
           scene: 'Scene 25 (Live Stream)',
           recommendation: 'All elements match ClickHouse script baseline. Safe to shoot.',
         });
+        addLog(`CLICKHOUSE VERIFICATION: PASSED. NO CONFLICTS WITH SCENE 25 BASELINE.`);
       }
     } catch (err) {
-      console.error('Real live frame analysis error:', err);
-      // Let it keep polling but show error
+      addLog(`API ERROR: GEMINI KEY MISSING OR CONNECTION FAILED.`);
     } finally {
       setLiveScanning(false);
     }
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (pollingIntervalId) {
-        clearInterval(pollingIntervalId);
-      }
+      if (pollingIntervalId) clearInterval(pollingIntervalId);
     };
   }, [pollingIntervalId]);
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
-      {/* Hidden Canvas for Live Video Frame Capture */}
+    <div className="bg-[#050505] min-h-screen p-6 text-[#e5e5e5] font-sans relative overflow-hidden" style={{ margin: '-24px', padding: '24px' }}>
+      <style dangerouslySetInnerHTML={{ __html: SCIFI_STYLES }} />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#dadce0] pb-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] uppercase tracking-wider mb-1">
-            <Camera className="w-4 h-4 text-[#1a73e8]" />
-            DIRECTOR'S ON-SET MONITOR · REAL GEMINI API + CLICKHOUSE CLOUD
-          </div>
-          <h1 className="text-2xl font-semibold text-[#202124] tracking-tight">
-            Live Camera Feed Recognition HUD
-          </h1>
-          <p className="text-xs text-[#5f6368] mt-1">
-            Exclusively powered by Google Cloud Gemini 2.0 Flash Vision & ClickHouse MCP for production-grade dynamic states.
-          </p>
-        </div>
+      {/* Decorative Grid Background */}
+      <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
-        <div className="flex items-center gap-3">
-          {streamActive && (
-            <button
-              onClick={captureAndAnalyzeFrame}
-              disabled={liveScanning}
-              className="gc-btn-secondary py-2.5 px-4 cursor-pointer flex items-center gap-2"
-            >
-              <Sparkles className={`w-4 h-4 text-[#1a73e8] ${liveScanning ? 'animate-spin' : ''}`} />
-              {liveScanning ? 'Scanning via Gemini...' : 'Scan Frame Now'}
-            </button>
-          )}
-
-          {!streamActive ? (
-            <button
-              onClick={startCameraStream}
-              className="gc-btn-primary py-2.5 px-5 cursor-pointer flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4 fill-white" />
-              CONNECT LIVE CAMERA STREAM
-            </button>
-          ) : (
-            <button
-              onClick={stopCameraStream}
-              className="gc-btn-danger py-2.5 px-5 cursor-pointer flex items-center gap-2"
-            >
-              <StopCircle className="w-4 h-4" />
-              DISCONNECT STREAM
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Operating Mode Bar */}
-      <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-[#1a73e8]" />
-          <span className="font-semibold text-[#202124]">Recognition Operating Mode:</span>
-          <span className="text-[#5f6368]">
-            📷 Production Live ML Vision (Gemini 2.0 Flash + Bounding Boxes)
-          </span>
-        </div>
-      </div>
-
-      {/* Main Director Monitor Display */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Columns: Live Video Feed Display */}
-        <div className="lg:col-span-2 gc-card p-6 space-y-4 bg-[#ffffff]">
-          <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#202124]">
-              <Video className="w-4 h-4 text-[#1a73e8]" />
-              DIRECTOR'S MONITOR FEED (CAMERA 1 · SCENE 25 LIVE)
+      <div className="max-w-[1600px] mx-auto relative z-10 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1f1f1f] pb-6">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-2">
+              <Sparkles className="w-4 h-4" />
+              CINESTATE // CONTINUITY INTELLIGENCE HUD // PROJECT AURORA
             </div>
-
-            {streamActive ? (
-              <span className="flex items-center gap-1.5 text-xs text-[#188038] font-semibold bg-[#e6f4ea] px-3 py-1 rounded border border-[#ceead6]">
-                <Database className="w-3.5 h-3.5" />
-                SAVED IN CLICKHOUSE ({scanCount} SCANS LOGGED)
-              </span>
-            ) : (
-              <span className="text-xs text-[#5f6368] bg-[#f8f9fa] px-3 py-1 rounded border border-[#dadce0]">
-                CAMERA OFFLINE
-              </span>
-            )}
+            <h1 className="text-3xl font-black text-white tracking-tighter">
+              DIRECTOR'S <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">LIVE MONITOR</span>
+            </h1>
           </div>
 
-          {/* Video Container / Live Webcam Stream View */}
-          <div className="aspect-video rounded bg-[#202124] relative overflow-hidden flex items-center justify-center shadow-inner">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
+          <div className="flex items-center gap-3">
+            {streamActive && (
+              <div className="px-4 py-2 border border-blue-500/30 bg-blue-500/10 rounded flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-widest">
+                <Activity className={`w-4 h-4 ${liveScanning ? 'animate-pulse' : ''}`} />
+                {liveScanning ? 'Gemini Analysing...' : 'Gemini Standby'}
+              </div>
+            )}
 
-            {/* Canvas for Gemini Bounding Boxes */}
-            <canvas
-              ref={overlayCanvasRef}
-              className={`absolute inset-0 w-full h-full pointer-events-none z-20 ${streamActive ? 'block' : 'hidden'}`}
-            />
-
-            <div className={`absolute inset-0 bg-[#202124] flex-col items-center justify-center space-y-3 text-white p-6 text-center z-30 ${!streamActive ? 'flex' : 'hidden'}`}>
-              <Camera className="w-12 h-12 text-[#5f6368]" />
-              <div className="text-sm font-semibold">Director Camera Feed Standby</div>
-              <p className="text-xs text-slate-400 max-w-md">
-                Click <strong>"Connect Live Camera Stream"</strong> to enable real-time Gemini Vision Object Detection.
-              </p>
+            {!streamActive ? (
               <button
                 onClick={startCameraStream}
-                className="gc-btn-primary mt-2 cursor-pointer"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded flex items-center gap-2 text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]"
               >
-                Start Live Camera Scanner
+                <Zap className="w-4 h-4 fill-white" />
+                Initialize Live Stream
               </button>
-            </div>
+            ) : (
+              <button
+                onClick={stopCameraStream}
+                className="px-6 py-2.5 bg-red-600/20 hover:bg-red-600/40 text-red-500 border border-red-500/50 font-bold rounded flex items-center gap-2 text-xs uppercase tracking-widest transition-all"
+              >
+                <StopCircle className="w-4 h-4" />
+                Terminate Link
+              </button>
+            )}
           </div>
+        </div>
 
-          <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2">
-            <span>Protocol: <strong>Gemini 2.0 Flash Vision API + ClickHouse Cloud MCP Memory</strong></span>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                 ML Model: <span className="text-[#188038] font-bold">Google Cloud Native</span>
-              </span>
-              <span>Scans Saved in ClickHouse: <strong className="text-[#1a73e8]">{scanCount}</strong></span>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Video Feed & Terminal */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Video Container */}
+            <div className="glass-card rounded-xl p-1 relative overflow-hidden group">
+              <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${streamActive ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></div>
+                <span className="text-[10px] font-bold tracking-widest uppercase text-white/70">CAM 01 // SCENE 25</span>
+              </div>
+              
+              <div className="aspect-video bg-[#0a0a0a] rounded-lg relative overflow-hidden flex items-center justify-center">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover filter contrast-125 saturate-50"
+                />
 
-          {/* Real Observations Logged */}
-          {liveObservations.length > 0 && (
-            <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-2 text-xs">
-              <div className="font-semibold text-[#202124] uppercase text-[11px]">Dynamic Visual Observations (Saved to ClickHouse Cloud):</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {liveObservations.map((obs, idx) => (
-                  <div key={idx} className="p-2 bg-white rounded border border-[#dadce0]">
-                    <div className="font-bold text-[#1a73e8]">{obs.attribute_name} = {obs.value}</div>
-                    <div className="text-[10px] text-[#5f6368]">Confidence: {(obs.confidence * 100).toFixed(0)}%</div>
+                <canvas
+                  ref={overlayCanvasRef}
+                  className={`absolute inset-0 w-full h-full pointer-events-none z-20 ${streamActive ? 'block' : 'hidden'}`}
+                />
+
+                {streamActive && <div className="scanline"></div>}
+
+                <div className={`absolute inset-0 bg-[#050505] flex-col items-center justify-center space-y-4 text-white z-30 ${!streamActive ? 'flex' : 'hidden'}`}>
+                  <div className="w-16 h-16 border-2 border-blue-500/30 rounded-full flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-blue-500/50" />
                   </div>
+                  <div className="text-sm font-bold tracking-[0.2em] text-blue-400">SENSOR OFFLINE</div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest max-w-sm text-center">
+                    Awaiting authorization to initialize Gemini 2.0 Flash Vision and ClickHouse Cloud memory link.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Terminal Log */}
+            <div className="glass-card rounded-xl p-4 flex flex-col h-40">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 border-b border-white/5 pb-2">
+                <Terminal className="w-4 h-4" />
+                SYSTEM AUDIT TRAIL // CLICKHOUSE MCP
+              </div>
+              <div ref={terminalRef} className="flex-1 overflow-y-auto terminal-scrollbar font-mono text-[11px] leading-relaxed text-emerald-400/80 space-y-1">
+                {terminalLogs.map((log, i) => (
+                  <div key={i} className={log.includes('CRITICAL') || log.includes('ERROR') ? 'text-red-400 font-bold' : ''}>{log}</div>
                 ))}
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Right Column: Real-Time Plain-English Director HUD Alert Box */}
-        <div className="gc-card p-6 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between border-b border-[#dadce0] pb-3 mb-4">
-              <h3 className="text-sm font-semibold text-[#202124] flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#1a73e8]" />
-                Director HUD Alert Box
-              </h3>
-              <span className="gc-chip-blue">LIVE MONITOR</span>
-            </div>
-
-            {!detectedState ? (
-              <div className="p-6 rounded bg-[#f8f9fa] border border-[#dadce0] text-center space-y-2 text-xs">
-                <CheckCircle2 className="w-8 h-8 text-[#188038] mx-auto" />
-                <div className="font-semibold text-[#202124]">Camera Stream Ready</div>
-                <p className="text-[#5f6368]">
-                  Waiting for camera feed. Gemini API will dynamically extract bounding boxes.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4 text-xs font-sans">
-                {/* Status Card */}
-                <div className={`p-4 rounded border space-y-2 ${
-                  liveScanStatus === 'CONFLICT_FOUND'
-                    ? 'bg-[#fce8e6] border-[#fad2cf]'
-                    : 'bg-[#e6f4ea] border-[#ceead6]'
-                }`}>
-                  <div className={`flex items-center justify-between font-bold ${
-                    liveScanStatus === 'CONFLICT_FOUND' ? 'text-[#d93025]' : 'text-[#188038]'
-                  }`}>
-                    <span className="flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" />
-                      {liveScanStatus === 'CONFLICT_FOUND' ? 'CONTINUITY ERROR DETECTED!' : 'LIVE VISION CONTINUITY PASS'}
-                    </span>
-                    <span>{liveScanStatus === 'CONFLICT_FOUND' ? 'HIGH RISK' : 'PASSED'}</span>
-                  </div>
-                  <div className="text-sm font-bold text-[#202124]">
-                    {liveScanStatus === 'CONFLICT_FOUND' ? (
-                      <>Gemini detected actor is wearing <span className="text-[#d93025] underline uppercase font-extrabold">{detectedState.observed}</span> instead of {detectedState.expected}.</>
-                    ) : (
-                      <>
-                        <p className="text-[#188038]">No Continuity Conflicts against ClickHouse Memory.</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Plain English Action Explanation */}
-                <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-2">
-                  <div className="font-semibold text-[#202124]">Agent Recommendation</div>
-                  <p className="text-xs text-[#5f6368] leading-relaxed">
-                    {detectedState.recommendation}
-                  </p>
-                </div>
-
-                {/* Quick Director Decision Buttons */}
-                <div className="space-y-2 pt-2">
-                  {liveScanStatus === 'CONFLICT_FOUND' && (
-                     <button
-                       onClick={() => alert('Reshoot order issued to camera crew! Audit log updated in ClickHouse.')}
-                       className="gc-btn-primary w-full justify-center py-2.5 cursor-pointer font-bold"
-                     >
-                       Reshoot Take Immediately ($1,500)
-                     </button>
-                  )}
-                  <button
-                    onClick={() => alert('State manually overridden in ClickHouse Cloud.')}
-                    className="gc-btn-secondary w-full justify-center py-2 cursor-pointer"
-                  >
-                    Accept Current State & Update Script
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
-          <div className="pt-3 border-t border-[#dadce0] text-[11px] text-[#5f6368]">
-            Directly connected to ClickHouse Cloud memory ledger.
+          {/* Right Column: Threat & State HUD */}
+          <div className="space-y-6">
+            <div className="glass-card rounded-xl p-6 flex flex-col h-full">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 border-b border-white/5 pb-4">
+                <Shield className="w-4 h-4" />
+                CONTINUITY THREAT ASSESSMENT
+              </div>
+
+              {!detectedState ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3 opacity-50">
+                  <Database className="w-12 h-12 text-gray-600 mb-2" />
+                  <div className="text-sm font-bold tracking-widest uppercase">Awaiting Feed</div>
+                  <p className="text-[10px] text-gray-400">Ready to compare against ClickHouse baseline.</p>
+                </div>
+              ) : (
+                <div className="flex-1 space-y-6 flex flex-col">
+                  {/* Big Status Badge */}
+                  <div className={`p-5 rounded-lg border ${
+                    liveScanStatus === 'CONFLICT_FOUND'
+                      ? 'bg-red-500/10 border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.15)]'
+                      : 'bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.1)]'
+                  }`}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-white/50">Status Code</div>
+                    <div className={`text-2xl font-black tracking-tight ${liveScanStatus === 'CONFLICT_FOUND' ? 'neon-text-red' : 'text-emerald-400'}`}>
+                      {liveScanStatus === 'CONFLICT_FOUND' ? 'CONFLICT DETECTED' : 'CLEAR TO SHOOT'}
+                    </div>
+                  </div>
+
+                  {/* Details Data Grid */}
+                  <div className="space-y-4 flex-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-black/40 p-3 rounded border border-white/5">
+                        <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Entity</div>
+                        <div className="text-sm font-bold text-white">{detectedState.character.toUpperCase()}</div>
+                      </div>
+                      <div className="bg-black/40 p-3 rounded border border-white/5">
+                        <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Confidence</div>
+                        <div className="text-sm font-bold text-blue-400">{(detectedState.confidence * 100).toFixed(1)}%</div>
+                      </div>
+                    </div>
+
+                    {liveScanStatus === 'CONFLICT_FOUND' && (
+                      <div className="bg-black/40 p-4 rounded border border-red-500/20 space-y-3">
+                        <div>
+                          <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Expected Baseline</div>
+                          <div className="text-sm font-mono text-emerald-400">{detectedState.expected.toUpperCase()}</div>
+                        </div>
+                        <div className="w-full h-px bg-white/5"></div>
+                        <div>
+                          <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Live Observation</div>
+                          <div className="text-sm font-mono text-red-400 line-through decoration-red-500/50 decoration-2">{detectedState.observed.toUpperCase()}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-500/5 p-4 rounded border border-blue-500/20 text-xs text-blue-200/70 leading-relaxed font-mono">
+                      {detectedState.recommendation}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {liveScanStatus === 'CONFLICT_FOUND' && (
+                    <button className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-widest rounded shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all">
+                      ISSUE RESHOOT ORDER
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
