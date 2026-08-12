@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Landing from './pages/Landing';
 import Layout from './layouts/Layout';
 import Dashboard from './pages/Dashboard';
 import Production from './pages/Production';
@@ -15,8 +16,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+        {/* Cinematic Landing Page */}
+        <Route path="/" element={<Landing />} />
+
+        {/* Studio App Shell Routes */}
+        <Route element={<Layout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="production" element={<Production />} />
           <Route path="script" element={<Script />} />
@@ -27,6 +31,8 @@ export default function App() {
           <Route path="agents" element={<AgentActivity />} />
           <Route path="settings" element={<Settings />} />
         </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
