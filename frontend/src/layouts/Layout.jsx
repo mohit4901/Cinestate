@@ -20,11 +20,14 @@ import {
   Clock,
   Menu,
   Sparkles,
+  BookOpen,
+  Info,
+  CheckCircle,
 } from 'lucide-react';
 
 export default function Layout() {
   const [activeScenario, setActiveScenario] = useState('scenario_a');
-  const [showDemoGuide, setShowDemoGuide] = useState(false);
+  const [showOpsGuide, setShowOpsGuide] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -122,17 +125,17 @@ export default function Layout() {
           {/* Right Header Actions */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowDemoGuide(true)}
+              onClick={() => setShowOpsGuide(true)}
               className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#e8f0fe] hover:bg-[#d2e3fc] text-[#1a73e8] border border-[#d2e3fc] flex items-center gap-1.5 transition cursor-pointer"
             >
-              <Play className="w-3.5 h-3.5 fill-[#1a73e8]" />
-              3-MIN PITCH DEMO
+              <BookOpen className="w-3.5 h-3.5" />
+              STUDIO OPERATIONS GUIDE
             </button>
 
             <button
-              onClick={() => setShowDemoGuide(true)}
+              onClick={() => setShowOpsGuide(true)}
               className="p-2 rounded-md hover:bg-[#f1f3f4] text-[#5f6368] transition cursor-pointer"
-              title="Help & Documentation"
+              title="Help & Operations Documentation"
             >
               <HelpCircle className="w-5 h-5" />
             </button>
@@ -225,80 +228,74 @@ export default function Layout() {
         </div>
       </div>
 
-      {/* 🎥 3-MINUTE PITCH DEMO GUIDE MODAL */}
-      {showDemoGuide && (
+      {/* 📘 STUDIO OPERATIONS GUIDE MODAL */}
+      {showOpsGuide && (
         <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="gc-card max-w-2xl w-full p-6 space-y-4 relative shadow-xl">
             <button
-              onClick={() => setShowDemoGuide(false)}
+              onClick={() => setShowOpsGuide(false)}
               className="absolute top-4 right-4 text-[#5f6368] hover:text-[#202124] cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-2 text-sm font-bold text-[#1a73e8]">
-              <Clock className="w-4 h-4" />
-              3-MINUTE JUDGE PITCH DEMO FLOW (180-SECOND PRESENTATION GUIDE)
+              <BookOpen className="w-4.5 h-4.5" />
+              STUDIO OPERATIONS GUIDE — HOW TO USE CINESTATE IN PRODUCTION
             </div>
+
+            <p className="text-xs text-[#5f6368]">
+              CINESTATE requires zero technical setup for film crews. Anyone on set (Director, Producer, Script Supervisor) can operate CINESTATE by following 4 simple steps:
+            </p>
 
             <div className="space-y-3 font-sans text-xs">
               <div className="p-3 rounded bg-[#e8f0fe] border border-[#d2e3fc] space-y-1">
                 <div className="font-bold text-[#1a73e8] flex justify-between">
-                  <span>0:00 – 0:30 | Screenplay Baseline (`/script`)</span>
-                  <span>Gemini 2.0 PDF Vision</span>
+                  <span>Step 1: Upload Screenplay (`/script`)</span>
+                  <span>Baseline Facts</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Show screenplay parsing. Gemini 2.0 Flash extracts Scene 17 baseline fact: <strong>Arjun injury = Left Arm (98% Conf)</strong> into ClickHouse.
+                  Drag & drop your screenplay PDF. Gemini 2.0 Flash automatically reads the script and establishes baseline scene facts (wardrobe, injuries, watches) in ClickHouse Cloud memory.
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-1">
                 <div className="font-bold text-[#202124] flex justify-between">
-                  <span>0:30 – 1:00 | Autonomous Watchdog Ingestion (`/dashboard`)</span>
-                  <span>Proactive Ingest Pipeline</span>
+                  <span>Step 2: Upload Video Takes (`/footage`)</span>
+                  <span>Camera Card Ingestion</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Click <strong>"SIMULATE LIVE FOOTAGE INGESTION"</strong>. Show how CINESTATE evaluates new footage automatically as soon as it arrives from camera cards.
+                  Upload video footage takes from set camera cards (.mp4/.mov). Gemini Vision scans actor wardrobe, props, and injuries to extract visual facts automatically.
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#fce8e6] border border-[#fad2cf] space-y-1">
                 <div className="font-bold text-[#d93025] flex justify-between">
-                  <span>1:00 – 1:40 | Evidence Chain & Conflict (`/conflicts`)</span>
-                  <span>Anti-Hallucination</span>
+                  <span>Step 3: Review Conflicts (`/conflicts`)</span>
+                  <span>Anti-Hallucination Engine</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Show Scene 25 Take 3: Observed Right Arm @ 00:12.8. Highlight Evidence Chain Card proving zero LLM hallucination.
-                </p>
-              </div>
-
-              <div className="p-3 rounded bg-[#fef7e0] border border-[#feefc3] space-y-1">
-                <div className="font-bold text-[#b06000] flex justify-between">
-                  <span>1:40 – 2:20 | Blast Radius 2.0 & Cost Matrix (`/conflicts`)</span>
-                  <span>ClickHouse Graph</span>
-                </div>
-                <p className="text-[#5f6368]">
-                  Show ClickHouse dependency tree affecting Scenes 26, 28, 31. Explain financial risk: <strong>$1,500 immediate reshoot vs $45,000 post-VFX fix</strong>.
+                  CINESTATE automatically compares script facts against footage. If an error is found (e.g. Left Arm vs Right Arm), it flags the mismatch with full evidence provenance.
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#e6f4ea] border border-[#ceead6] space-y-1">
                 <div className="font-bold text-[#188038] flex justify-between">
-                  <span>2:20 – 3:00 | Action Planner & MCP Proof (`/agents`)</span>
-                  <span>mcp-clickhouse Protocol</span>
+                  <span>Step 4: Director Action Planner (`/conflicts`)</span>
+                  <span>Financial ROI</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Click <strong>"Execute Option A Reshoot"</strong>. Open Agent Activity tab showing node trace drawer and raw `mcp-clickhouse` JSON-RPC messages.
+                  Review resolution options: <strong>Option A (Reshoot Take - $1,500)</strong> vs <strong>Option C (Post-VFX Fix - $45,000)</strong>. Approve or log notes in 1 click!
                 </p>
               </div>
             </div>
 
             <div className="pt-2 text-right">
               <button
-                onClick={() => setShowDemoGuide(false)}
-                className="gc-btn-primary"
+                onClick={() => setShowOpsGuide(false)}
+                className="gc-btn-primary cursor-pointer"
               >
-                Start Demo Pitch
+                Close Guide
               </button>
             </div>
           </div>

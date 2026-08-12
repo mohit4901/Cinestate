@@ -18,6 +18,7 @@ import {
   TrendingDown,
   ChevronRight,
   Shield,
+  Info,
 } from 'lucide-react';
 import { getStats, getConflicts, getDependencies, analyzeTake } from '../services/api';
 
@@ -114,6 +115,17 @@ export default function Dashboard() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      {/* ℹ️ HOW CINESTATE WORKS ON SET (FILMMAKER GUIDANCE BANNER) */}
+      <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] flex items-start gap-3 text-xs">
+        <Info className="w-5 h-5 text-[#1a73e8] shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <div className="font-semibold text-[#1a73e8]">How CINESTATE Operates During Film Production</div>
+          <p className="text-[#5f6368] leading-relaxed">
+            CINESTATE acts as an automated 24/7 Script Supervisor. When your team uploads a screenplay PDF (`/script`) or camera card video takes (`/footage`), Gemini AI extracts facts into ClickHouse Cloud. If an actor wears a prop on the wrong side or has a mismatching injury, CINESTATE alerts the Director before set wrapping.
+          </p>
         </div>
       </div>
 
