@@ -44,6 +44,7 @@ export default function Layout() {
     {
       title: 'OVERVIEW',
       items: [
+        { path: '/', label: 'Studio Home', icon: Film },
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       ],
     },

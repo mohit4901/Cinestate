@@ -11,10 +11,40 @@ export default function DirectorHUD() {
   const [liveObservations, setLiveObservations] = useState([]);
   const [scanCount, setScanCount] = useState(0);
 
+  const [tfjsLoaded, setTfjsLoaded] = useState(false);
+  const [localModel, setLocalModel] = useState(null);
+
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
   const animationFrameId = useRef(null);
+
+  // ── LOAD REAL TENSORFLOW.JS (COCO-SSD) LOCAL MODEL VIA CDN ──
+  useEffect(() => {
+    const loadTFJS = async () => {
+      if (window.tf && window.cocoSsd) {
+        const model = await window.cocoSsd.load();
+        setLocalModel(model);
+        setTfjsLoaded(true);
+        return;
+      }
+      
+      const tfScript = document.createElement('script');
+      tfScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs";
+      tfScript.onload = () => {
+        const cocoScript = document.createElement('script');
+        cocoScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd";
+        cocoScript.onload = async () => {
+          const model = await window.cocoSsd.load();
+          setLocalModel(model);
+          setTfjsLoaded(true);
+        };
+        document.head.appendChild(cocoScript);
+      };
+      document.head.appendChild(tfScript);
+    };
+    loadTFJS();
+  }, []);
 
   // Toggle Live Webcam / Wireless Camera Feed
   const startCameraStream = async () => {
@@ -51,11 +81,13 @@ export default function DirectorHUD() {
     }
   };
 
-  // Real-time Canvas Pose & Landmark Bounding Box Overlay Loop
+  // Real-time Canvas Object Detection (TFJS COCO-SSD) + Demo Overlays
   useEffect(() => {
     if (!streamActive) return;
 
-    const drawOverlay = () => {
+    let isDetecting = true;
+    const drawOverlay = async () => {
+      if (!isDetecting) return;
       if (videoRef.current && overlayCanvasRef.current && videoRef.current.readyState === 4) {
         const video = videoRef.current;
         const canvas = overlayCanvasRef.current;
@@ -67,26 +99,31 @@ export default function DirectorHUD() {
         const w = canvas.width;
         const h = canvas.height;
 
-        // Draw Face Tracking Box around detected face region
-        const faceX = w * 0.32;
-        const faceY = h * 0.18;
-        const faceW = w * 0.36;
-        const faceH = h * 0.52;
+        // Mode 1: REAL WEBCAM (Use Local TFJS Model for Real Object Detection)
+        if (operatingMode === 'REAL_WEBCAM' && localModel) {
+          try {
+            const predictions = await localModel.detect(video);
+            predictions.forEach((pred) => {
+              const [x, y, width, height] = pred.bbox;
+              
+              // Draw real ML bounding box!
+              ctx.strokeStyle = '#1a73e8';
+              ctx.lineWidth = 3;
+              ctx.setLineDash([]);
+              ctx.strokeRect(x, y, width, height);
 
-        ctx.strokeStyle = '#1a73e8';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 4]);
-        ctx.strokeRect(faceX, faceY, faceW, faceH);
-
-        // Face Label Pill
-        ctx.fillStyle = '#1a73e8';
-        ctx.fillRect(faceX, faceY - 22, 210, 22);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px Inter, sans-serif';
-        ctx.fillText('GEMINI 2.0 VISION: ARJUN (99%)', faceX + 8, faceY - 7);
-
-        // Demo Mode Conflict Box
-        if (operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND') {
+              ctx.fillStyle = '#1a73e8';
+              ctx.fillRect(x, Math.max(0, y - 24), 220, 24);
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 11px Inter, sans-serif';
+              ctx.fillText(`REAL ML: ${pred.class.toUpperCase()} (${(pred.score * 100).toFixed(0)}%)`, x + 8, Math.max(0, y - 24) + 16);
+            });
+          } catch (e) {
+            console.error("TFJS detection error:", e);
+          }
+        } 
+        // Mode 2: DEMO SCENARIO (Force Fake Injury Box for Hackathon Demo)
+        else if (operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND') {
           const armX = w * 0.08;
           const armY = h * 0.40;
           const armW = w * 0.30;
@@ -102,38 +139,24 @@ export default function DirectorHUD() {
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 11px Inter, sans-serif';
           ctx.fillText('🔴 RIGHT ARM: INJURY BANDAGE (0.94)', armX + 8, armY - 8);
-        } else {
-          // Real Honest Live Mode: Clean green box around user's posture
-          const bodyX = w * 0.20;
-          const bodyY = h * 0.12;
-          const bodyW = w * 0.60;
-          const bodyH = h * 0.75;
-
-          ctx.strokeStyle = '#188038';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([]);
-          ctx.strokeRect(bodyX, bodyY, bodyW, bodyH);
-
-          ctx.fillStyle = '#188038';
-          ctx.fillRect(bodyX, bodyY - 24, 270, 24);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 11px Inter, sans-serif';
-          ctx.fillText('✅ REAL WEBCAM SCAN: NO INJURY / CLEAN', bodyX + 8, bodyY - 8);
         }
       }
-      animationFrameId.current = requestAnimationFrame(drawOverlay);
+      if (isDetecting) {
+        animationFrameId.current = requestAnimationFrame(drawOverlay);
+      }
     };
 
     drawOverlay();
 
     return () => {
+      isDetecting = false;
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [streamActive, liveScanStatus, operatingMode]);
+  }, [streamActive, liveScanStatus, operatingMode, localModel]);
 
-  // REAL GEMINI 2.0 FLASH WEBCAM FRAME CAPTURE & CLICKHOUSE SAVER
+  // REAL WEBCAM FRAME CAPTURE & CLICKHOUSE SAVER
   const captureAndAnalyzeFrame = async () => {
     setLiveScanning(true);
     try {
@@ -174,9 +197,9 @@ export default function DirectorHUD() {
           recommendation: 'Stop Take 3 immediately. Reshoot required.',
         });
       } else {
-        // Real Live Webcam Scan Mode
+        // Honest Real Webcam Scan Mode
         setLiveScanStatus('MATCH');
-        const shirtObs = res.observations?.find((o) => o.attribute_name === 'clothing_style')?.value || 't_shirt';
+        const shirtObs = res.observations?.find((o) => o.attribute_name === 'clothing_style')?.value || 'unknown_local_fallback';
         setDetectedState({
           character: 'Arjun',
           expected: 'left_arm',
@@ -185,7 +208,7 @@ export default function DirectorHUD() {
           confidence: 0.98,
           timestamp: 'LIVE',
           scene: 'Scene 25 / Take 3 (Live Stream)',
-          recommendation: 'Gemini 2.0 Flash Vision scanned live webcam. No bandage observed on arms.',
+          recommendation: 'Running local TFJS ML Model on browser. (Set GEMINI_API_KEY in backend for advanced clothing state vision).',
         });
       }
     } catch (err) {
@@ -198,7 +221,7 @@ export default function DirectorHUD() {
         confidence: 0.96,
         timestamp: 'LIVE',
         scene: 'Scene 25 / Take 3 (Live Stream)',
-        recommendation: 'Gemini 2.0 Flash Vision scanned camera stream.',
+        recommendation: 'Local Vision Scan Active.',
       });
     } finally {
       setLiveScanning(false);
@@ -215,13 +238,13 @@ export default function DirectorHUD() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] uppercase tracking-wider mb-1">
             <Camera className="w-4 h-4 text-[#1a73e8]" />
-            DIRECTOR'S ON-SET MONITOR · REAL WEBCAM + DEMO SCENARIO + CLICKHOUSE CLOUD
+            DIRECTOR'S ON-SET MONITOR · REAL ML WEBCAM + CLICKHOUSE CLOUD
           </div>
           <h1 className="text-2xl font-semibold text-[#202124] tracking-tight">
             Live Camera Feed Recognition HUD
           </h1>
           <p className="text-xs text-[#5f6368] mt-1">
-            Gemini 2.0 Flash scans camera frames in real-time. All observations and audit logs are written directly to ClickHouse Cloud.
+            Uses Local TensorFlow.js (COCO-SSD) for 100% genuine real-time bounding boxes.
           </p>
         </div>
 
@@ -233,7 +256,7 @@ export default function DirectorHUD() {
               className="gc-btn-secondary py-2.5 px-4 cursor-pointer flex items-center gap-2"
             >
               <Sparkles className={`w-4 h-4 text-[#1a73e8] ${liveScanning ? 'animate-spin' : ''}`} />
-              {liveScanning ? 'Scanning Frame with Gemini...' : 'Scan Live Frame (Gemini 2.0)'}
+              {liveScanning ? 'Scanning...' : 'Scan Frame & Save State'}
             </button>
           )}
 
@@ -264,7 +287,7 @@ export default function DirectorHUD() {
           <span className="font-semibold text-[#202124]">Recognition Operating Mode:</span>
           <span className="text-[#5f6368]">
             {operatingMode === 'REAL_WEBCAM'
-              ? '📷 Real Live Webcam Scan (Gemini 2.0 Vision)'
+              ? '📷 Real Live ML Vision (TensorFlow.js COCO-SSD)'
               : '🎬 Simulate Scene 25 Take 3 Conflict Scenario (Golden Pitch Demo)'}
           </span>
         </div>
@@ -279,7 +302,7 @@ export default function DirectorHUD() {
               operatingMode === 'REAL_WEBCAM' ? 'bg-[#1a73e8] text-white' : 'bg-white text-[#5f6368] border border-[#dadce0]'
             }`}
           >
-            Real Live Webcam Mode
+            Real ML Webcam Vision
           </button>
           <button
             onClick={() => {
@@ -340,7 +363,7 @@ export default function DirectorHUD() {
                 <Camera className="w-12 h-12 text-[#5f6368]" />
                 <div className="text-sm font-semibold">Director Camera Feed Standby</div>
                 <p className="text-xs text-slate-400 max-w-md">
-                  Click <strong>"Connect Live Camera Stream"</strong> to enable real-time pose tracking & Gemini 2.0 Flash vision recognition.
+                  Click <strong>"Connect Live Camera Stream"</strong> to enable real-time local TFJS object detection.
                 </p>
                 <button
                   onClick={startCameraStream}
@@ -353,14 +376,19 @@ export default function DirectorHUD() {
           </div>
 
           <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2">
-            <span>Protocol: <strong>Gemini 2.0 Multimodal Vision + ClickHouse Cloud Memory</strong></span>
-            <span>Scans Saved in ClickHouse: <strong className="text-[#1a73e8]">{scanCount}</strong></span>
+            <span>Protocol: <strong>Local TFJS COCO-SSD + ClickHouse Cloud Memory</strong></span>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                 ML Model: {tfjsLoaded ? <span className="text-[#188038] font-bold">TFJS Loaded (Real)</span> : <span className="text-[#fbbc04]">Loading CDN...</span>}
+              </span>
+              <span>Scans Saved in ClickHouse: <strong className="text-[#1a73e8]">{scanCount}</strong></span>
+            </div>
           </div>
 
           {/* Real Observations Logged */}
           {liveObservations.length > 0 && (
             <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-2 text-xs">
-              <div className="font-semibold text-[#202124] uppercase text-[11px]">Extracted Gemini Visual Observations (Saved to ClickHouse Cloud):</div>
+              <div className="font-semibold text-[#202124] uppercase text-[11px]">Extracted Visual Observations (Saved to ClickHouse Cloud):</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {liveObservations.map((obs, idx) => (
                   <div key={idx} className="p-2 bg-white rounded border border-[#dadce0]">
@@ -389,7 +417,7 @@ export default function DirectorHUD() {
                 <CheckCircle2 className="w-8 h-8 text-[#188038] mx-auto" />
                 <div className="font-semibold text-[#202124]">Camera Stream Ready</div>
                 <p className="text-[#5f6368]">
-                  Waiting for camera feed. Gemini 2.0 Flash scans live camera frames for continuity errors in real-time.
+                  Waiting for camera feed. Real ML tracks live objects.
                 </p>
               </div>
             ) : (
@@ -405,7 +433,7 @@ export default function DirectorHUD() {
                   }`}>
                     <span className="flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" />
-                      {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'CONTINUITY ERROR DETECTED!' : 'STATE IS CONSISTENT'}
+                      {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'CONTINUITY ERROR DETECTED!' : 'REAL TFJS ML ACTIVE'}
                     </span>
                     <span>{operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'HIGH RISK' : 'PASSED'}</span>
                   </div>
@@ -413,11 +441,11 @@ export default function DirectorHUD() {
                     {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? (
                       <>Actor Arjun is wearing injury on his <span className="text-[#d93025] underline uppercase font-extrabold">{detectedState.observed}</span>.</>
                     ) : (
-                      <>Gemini 2.0 Flash scanned live camera feed: Person wearing <strong className="text-[#188038] uppercase">{detectedState.clothing || 't_shirt'}</strong>. No bandage observed.</>
+                      <>
+                        <p className="text-[#188038]">Genuine Local TensorFlow.js object detection is active on your camera!</p>
+                        <p className="font-normal mt-1 text-[#5f6368]">(Note: For advanced clothing state vision like "shirtless", you must provide a valid GEMINI_API_KEY in backend).</p>
+                      </>
                     )}
-                  </div>
-                  <div className="text-xs text-[#5f6368] pt-2 border-t border-[#dadce0]">
-                    <strong>Script Baseline:</strong> Scene 17 explicitly requires injury on <strong>{detectedState.expected.toUpperCase()}</strong>.
                   </div>
                 </div>
 
@@ -428,7 +456,7 @@ export default function DirectorHUD() {
                     {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? (
                       <>Stop Take 3 immediately before set lights & actors are moved. Reshooting now costs <strong>$1,500</strong>. Waiting for post-production VFX fix will cost <strong>$45,000</strong>.</>
                     ) : (
-                      <>Webcam feed scanned cleanly by Gemini 2.0 Flash. Click <strong>"Demo Conflict Scenario"</strong> to test the film set conflict scenario.</>
+                      <>Local ML stream running smoothly. Click <strong>"Demo Conflict Scenario"</strong> to test the film set conflict scenario.</>
                     )}
                   </p>
                 </div>
