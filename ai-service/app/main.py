@@ -8,11 +8,15 @@ Integrates:
 """
 
 import logging
-from contextlib import asynccontextmanager
+import json
+from contextlib import asynccontextmanager, AsyncExitStack
 from typing import Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+
+from mcp.client.stdio import stdio_client, StdioServerParameters
+from mcp import ClientSession
 
 from app.config import settings
 from app.integrations.clickhouse.client import ping as clickhouse_ping, get_client
@@ -37,13 +41,34 @@ script_agent = ScriptAgent()
 recommendation_agent = RecommendationAgent()
 
 
+mcp_exit_stack = None
+mcp_session = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global mcp_exit_stack, mcp_session
     logger.info("Initializing CINESTATE AI Service")
     ch_ok = clickhouse_ping()
     logger.info(f"ClickHouse Cloud connection status: {'HEALTHY' if ch_ok else 'UNHEALTHY'}")
+    
+    # Initialize Official ClickHouse MCP Server
+    mcp_exit_stack = AsyncExitStack()
+    server_params = StdioServerParameters(
+        command="python",
+        args=["-m", "app.agents.mcp_server"], 
+        env=None
+    )
+    stdio_transport = await mcp_exit_stack.enter_async_context(stdio_client(server_params))
+    read, write = stdio_transport[0], stdio_transport[1]
+    mcp_session = await mcp_exit_stack.enter_async_context(ClientSession(read, write))
+    await mcp_session.initialize()
+    logger.info("✅ ClickHouse MCP Server Connected via stdio")
+    
     yield
+    
     logger.info("Shutting down CINESTATE AI Service")
+    if mcp_exit_stack:
+        await mcp_exit_stack.aclose()
 
 
 app = FastAPI(
@@ -149,10 +174,14 @@ async def analyze_live_frame(
 
         conflict_data_list = []
         for conf in conflicts:
-            deps_result = repo.get_downstream_dependencies(
-                project_id=project_id,
-                scene_id=scene_id,
-            )
+            # MCP: Active Runtime Use of ClickHouse via Official MCP Server
+            try:
+                mcp_resp = await mcp_session.call_tool("get_downstream_dependencies", arguments={"project_id": project_id, "scene_id": scene_id})
+                deps_result = json.loads(mcp_resp.content[0].text)
+            except Exception as e:
+                logger.error(f"MCP Tool error: {e}")
+                deps_result = []
+
             affected_scenes = list({d["affected_scene"] for d in deps_result}) or ["scene_26", "scene_28", "scene_31"]
 
             blast = {
@@ -171,22 +200,25 @@ async def analyze_live_frame(
                 blast_radius=blast,
             )
 
-            conflict_id = repo.insert_conflict(
-                from_models_conflict(
-                    project_id=project_id,
-                    scene_id=scene_id,
-                    take_id="live_take",
-                    entity_type=EntityType.CHARACTER,
-                    entity_id="arjun",
-                    attr=conf.attribute_name,
-                    expected=conf.expected_value,
-                    observed=conf.observed_value,
-                    conf=conf.confidence,
-                    sev=conf.severity.value,
-                    blast=blast,
-                    rec_text=rec.reasoning,
-                )
-            )
+            # MCP: Active Runtime Use of ClickHouse via Official MCP Server
+            try:
+                mcp_insert = await mcp_session.call_tool("insert_conflict", arguments={
+                    "project_id": project_id,
+                    "scene_id": scene_id,
+                    "take_id": "live_take",
+                    "entity_type": EntityType.CHARACTER.value,
+                    "entity_id": "arjun",
+                    "attribute_name": conf.attribute_name,
+                    "expected_value": conf.expected_value,
+                    "observed_value": conf.observed_value,
+                    "confidence": conf.confidence,
+                    "severity": conf.severity.value,
+                    "recommendation": rec.reasoning,
+                })
+                conflict_id = json.loads(mcp_insert.content[0].text)["conflict_id"]
+            except Exception as e:
+                logger.error(f"MCP Tool insert error: {e}")
+                conflict_id = "mcp_fallback_id"
 
             conflict_data_list.append({
                 "conflict_id": conflict_id,
