@@ -92,7 +92,7 @@ export default function Layout() {
               <div className="w-8 h-8 rounded-md bg-[#1a73e8] flex items-center justify-center text-white font-bold text-sm shadow-xs">
                 <Film className="w-4 h-4" />
               </div>
-              <span className="font-extrabold text-base tracking-tight text-[#202124]">CINESTATE</span>
+              <span className="font-bold text-base tracking-tight text-[#202124]">CINESTATE</span>
             </div>
 
             <div className="h-5 w-px bg-[#dadce0] mx-1" />
@@ -100,7 +100,7 @@ export default function Layout() {
             {/* Project Selector Dropdown */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-[#f8f9fa] border border-[#dadce0] text-xs font-medium cursor-pointer transition">
               <span className="w-2 h-2 rounded-full bg-[#188038]"></span>
-              <span className="text-[#202124] font-bold">Project Aurora</span>
+              <span className="text-[#202124] font-semibold">Project Aurora</span>
               <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function Layout() {
             <div className="h-5 w-px bg-[#dadce0] mx-1" />
 
             {/* User Avatar */}
-            <div className="w-8 h-8 rounded-full bg-[#e8f0fe] border border-[#d2e3fc] flex items-center justify-center text-[#1a73e8] font-bold text-xs cursor-pointer">
+            <div className="w-8 h-8 rounded-full bg-[#e8f0fe] border border-[#d2e3fc] flex items-center justify-center text-[#1a73e8] font-semibold text-xs cursor-pointer">
               <User className="w-4 h-4" />
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function Layout() {
               {navSections.map((section) => (
                 <div key={section.title} className="mb-4">
                   {!sidebarCollapsed && (
-                    <div className="px-4 py-1 text-[11px] font-bold text-[#5f6368] uppercase tracking-wider">
+                    <div className="px-4 py-1 text-[11px] font-semibold text-[#5f6368] uppercase tracking-wider">
                       {section.title}
                     </div>
                   )}
@@ -205,14 +205,14 @@ export default function Layout() {
 
             {/* Sidebar Footprint Status */}
             {!sidebarCollapsed && (
-              <div className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] text-[11px] font-mono text-[#5f6368] space-y-1">
+              <div className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] text-[11px] text-[#5f6368] space-y-1">
                 <div className="flex justify-between">
                   <span>Engine:</span>
-                  <span className="text-[#188038] font-bold">mcp-clickhouse</span>
+                  <span className="text-[#188038] font-semibold">mcp-clickhouse</span>
                 </div>
                 <div className="flex justify-between">
                   <span>AI:</span>
-                  <span className="text-[#1a73e8] font-bold">Gemini 2.0 Flash</span>
+                  <span className="text-[#1a73e8] font-semibold">Gemini 2.0 Flash</span>
                 </div>
               </div>
             )}

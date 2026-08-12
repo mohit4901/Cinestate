@@ -4,7 +4,7 @@ import { getAuditLogs } from '../services/api';
 
 export default function AgentActivity() {
   const [logs, setLogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('telemetry'); // 'telemetry' | 'mcp_inspector'
+  const [activeTab, setActiveTab] = useState('telemetry');
   const [selectedAgentNode, setSelectedAgentNode] = useState(null);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function AgentActivity() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#dadce0] pb-4">
         <div>
-          <h1 className="text-2xl font-normal text-[#202124] tracking-tight">
+          <h1 className="text-2xl font-semibold text-[#202124] tracking-tight">
             Agent Activity & Distributed Trace
           </h1>
           <p className="text-xs text-[#5f6368] mt-1">
@@ -154,7 +154,7 @@ export default function AgentActivity() {
               Agent Execution Trace (Click Node to Inspect Detail Drawer)
             </h3>
 
-            <div className="space-y-3 font-mono text-xs">
+            <div className="space-y-3 text-xs">
               {agentTraceNodes.map((node, idx) => (
                 <div
                   key={node.name}
@@ -167,7 +167,7 @@ export default function AgentActivity() {
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#202124]">{node.name}</span>
+                        <span className="font-semibold text-[#202124]">{node.name}</span>
                         <span className="gc-chip-green">{node.status}</span>
                       </div>
                       <p className="text-xs font-sans text-[#5f6368] mt-0.5">{node.result}</p>
@@ -185,7 +185,7 @@ export default function AgentActivity() {
           </div>
 
           {/* ClickHouse Audit Stream */}
-          <div className="gc-card p-6 space-y-4 font-mono">
+          <div className="gc-card p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#dadce0] text-xs">
               <span className="text-[#188038] flex items-center gap-2 font-bold">
                 <Terminal className="w-4 h-4 text-[#188038]" />
@@ -209,7 +209,7 @@ export default function AgentActivity() {
                       <span className="text-[#1a73e8] font-bold">
                         ● {log.agent_name || 'OrchestratorAgent'}
                       </span>
-                      <span className="gc-chip-green font-mono">
+                      <span className="gc-chip-green font-semibold">
                         {log.latency_ms || 14}ms
                       </span>
                     </div>
@@ -227,7 +227,7 @@ export default function AgentActivity() {
         </div>
       ) : (
         /* MCP JSON-RPC Inspector */
-        <div className="gc-card p-6 space-y-4 font-mono">
+        <div className="gc-card p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#dadce0] text-xs">
             <span className="text-[#1a73e8] flex items-center gap-2 font-bold">
               <Code className="w-4 h-4" />
@@ -249,7 +249,7 @@ export default function AgentActivity() {
                 <span className="text-[#188038]">Method: tools/call</span>
               </div>
 
-              <pre className="text-[#202124] text-xs overflow-x-auto p-4 rounded bg-white border border-[#dadce0] leading-relaxed font-mono">
+              <pre className="text-[#202124] text-xs overflow-x-auto p-4 rounded bg-white border border-[#dadce0] leading-relaxed">
                 {JSON.stringify(mcpPayloadSample, null, 2)}
               </pre>
             </div>
@@ -260,7 +260,7 @@ export default function AgentActivity() {
       {/* Node Detail Drawer Modal */}
       {selectedAgentNode && (
         <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="gc-card max-w-2xl w-full p-6 space-y-4 relative shadow-xl font-mono text-xs">
+          <div className="gc-card max-w-2xl w-full p-6 space-y-4 relative shadow-xl text-xs font-sans">
             <button
               onClick={() => setSelectedAgentNode(null)}
               className="absolute top-4 right-4 text-[#5f6368] hover:text-[#202124] cursor-pointer"
@@ -293,12 +293,12 @@ export default function AgentActivity() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-[10px] text-[#5f6368] font-bold uppercase block">Node Inputs</span>
+              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Node Inputs</span>
               <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#202124] text-[11px] overflow-x-auto">{JSON.stringify(selectedAgentNode.input, null, 2)}</pre>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[10px] text-[#5f6368] font-bold uppercase block">Node Outputs</span>
+              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Node Outputs</span>
               <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#188038] text-[11px] overflow-x-auto">{JSON.stringify(selectedAgentNode.output, null, 2)}</pre>
             </div>
           </div>

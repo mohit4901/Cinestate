@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -21,22 +21,21 @@
     --gc-error-bg: #fce8e6;
   }
 
+  *, body, code, kbd, samp, pre {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Google Sans', Roboto, sans-serif !important;
+  }
+
   body {
     background-color: #ffffff;
     color: #202124;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Google Sans', Roboto, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
-
-  code, kbd, samp, pre {
-    font-family: 'JetBrains Mono', monospace;
-  }
 }
 
-/* Google Cloud Material Scrollbar */
+/* Custom Google Material Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -88,7 +87,7 @@
   border: 1px solid transparent;
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
   display: inline-flex;
-  items: center;
+  align-items: center;
   gap: 6px;
 }
 .gc-btn-primary:hover {
@@ -106,7 +105,7 @@
   border: 1px solid #dadce0;
   transition: background-color 0.15s ease, border-color 0.15s ease;
   display: inline-flex;
-  items: center;
+  align-items: center;
   gap: 6px;
 }
 .gc-btn-secondary:hover {
@@ -167,17 +166,4 @@
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 600;
-}
-
-/* Skeleton Loader */
-.gc-skeleton {
-  background: linear-gradient(90deg, #f8f9fa 25%, #f1f3f4 50%, #f8f9fa 75%);
-  background-size: 200% 100%;
-  animation: gc-loading 1.5s infinite;
-  border-radius: 4px;
-}
-
-@keyframes gc-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
 }

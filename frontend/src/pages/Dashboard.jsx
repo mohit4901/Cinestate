@@ -90,7 +90,7 @@ export default function Dashboard() {
       {/* Page Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#dadce0] pb-4">
         <div>
-          <h1 className="text-2xl font-normal text-[#202124] tracking-tight">
+          <h1 className="text-2xl font-semibold text-[#202124] tracking-tight">
             Dashboard
           </h1>
           <p className="text-xs text-[#5f6368] mt-1">
@@ -119,8 +119,8 @@ export default function Dashboard() {
 
       {/* Autonomous Watchdog Active Pipeline Notification */}
       {watchdogRunning && (
-        <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] space-y-2 text-xs font-mono">
-          <div className="text-xs font-bold text-[#1a73e8] flex items-center gap-2">
+        <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] space-y-2 text-xs">
+          <div className="text-xs font-semibold text-[#1a73e8] flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#1a73e8] animate-spin" />
             AUTONOMOUS WATCHDOG PIPELINE STREAM IN PROGRESS
           </div>
@@ -142,10 +142,10 @@ export default function Dashboard() {
             Scenes Tracked
           </div>
           <div className="flex items-baseline justify-between pt-1">
-            <span className="text-3xl font-normal text-[#202124] font-mono">
+            <span className="text-3xl font-semibold text-[#202124]">
               {stats?.total_scenes || 8}
             </span>
-            <span className="gc-chip-blue">ClickHouse `scenes`</span>
+            <span className="gc-chip-blue">ClickHouse scenes</span>
           </div>
           <div className="text-[11px] text-[#5f6368] pt-2 border-t border-[#f1f3f4]">
             Screenplay baseline breakdown
@@ -158,7 +158,7 @@ export default function Dashboard() {
             Production Events
           </div>
           <div className="flex items-baseline justify-between pt-1">
-            <span className="text-3xl font-normal text-[#202124] font-mono">
+            <span className="text-3xl font-semibold text-[#202124]">
               {stats?.total_events || 31}
             </span>
             <span className="gc-chip-green">ClickHouse Cloud</span>
@@ -174,7 +174,7 @@ export default function Dashboard() {
             Active Conflicts
           </div>
           <div className="flex items-baseline justify-between pt-1">
-            <span className="text-3xl font-normal text-[#d93025] font-mono">
+            <span className="text-3xl font-semibold text-[#d93025]">
               {stats?.open_conflicts || 1}
             </span>
             <span className="gc-chip-red">HIGH SEVERITY</span>
@@ -190,7 +190,7 @@ export default function Dashboard() {
             Continuity Health
           </div>
           <div className="flex items-baseline justify-between pt-1">
-            <span className="text-3xl font-normal text-[#188038] font-mono">
+            <span className="text-3xl font-semibold text-[#188038]">
               {stats?.consistency_score || 92}%
             </span>
             <span className="gc-chip-green">HEALTHY</span>
@@ -205,7 +205,7 @@ export default function Dashboard() {
       <div className="gc-card p-5 space-y-3">
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-[#202124]">Production Continuity Health Overview</span>
-          <span className="font-mono text-[#188038] font-bold">92% Consistent Across 8 Scenes</span>
+          <span className="text-[#188038] font-bold">92% Consistent Across 8 Scenes</span>
         </div>
         <div className="w-full h-2 rounded-full bg-[#f1f3f4] overflow-hidden flex">
           <div className="h-full bg-[#188038]" style={{ width: '92%' }}></div>
@@ -222,7 +222,7 @@ export default function Dashboard() {
               <Clock className="w-4 h-4 text-[#1a73e8]" />
               Recent Activity & Event Stream
             </h3>
-            <span className="text-xs font-mono text-[#5f6368]">ClickHouse Stream</span>
+            <span className="text-xs text-[#5f6368]">ClickHouse Stream</span>
           </div>
 
           <div className="space-y-3">
@@ -236,7 +236,7 @@ export default function Dashboard() {
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#202124]">{act.title}</span>
-                      <span className="text-[11px] font-mono text-[#5f6368]">{act.time}</span>
+                      <span className="text-[11px] text-[#5f6368]">{act.time}</span>
                     </div>
                     <p className="text-xs text-[#5f6368]">{act.desc}</p>
                   </div>
@@ -257,7 +257,7 @@ export default function Dashboard() {
               <span className="gc-chip-amber">3 SCENES AFFECTED</span>
             </div>
 
-            <div className="space-y-2 font-mono text-xs">
+            <div className="space-y-2 text-xs">
               <div className="p-2.5 rounded bg-[#fef7e0] border border-[#feefc3] text-[#b06000] font-semibold">
                 Scene 26: INT. POLICE CAR — Dialogue assumes left_arm
               </div>
