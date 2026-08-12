@@ -36,4 +36,9 @@ export const searchEvents = (projectId = 'project-aurora', character = '', scene
 export const analyzeTake = (data) =>
   api.post('/analyze-take', data).then((res) => res.data);
 
+export const analyzeLiveFrame = (formData) =>
+  api.post('/analyze-live-frame', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then((res) => res.data);
+
 export default api;
