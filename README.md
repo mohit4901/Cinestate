@@ -1,121 +1,70 @@
-# CINESTATE 🎬
-### AI Production State & Continuity Intelligence Platform
-**Google Cloud Agentic Cinema Hackathon 2026 — ClickHouse Track Entry**
+# 🎬 CINESTATE: Autonomous Cinema Intelligence
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
-[![Database: ClickHouse Cloud](https://img.shields.io/badge/Database-ClickHouse%20Cloud-yellow.svg)](https://clickhouse.com/)
-[![AI Engine: Gemini 2.0 Flash](https://img.shields.io/badge/AI%20Engine-Gemini%202.0%20Flash-blue.svg)](https://deepmind.google/technologies/gemini/)
-[![Framework: Google ADK](https://img.shields.io/badge/Framework-Google%20ADK-red.svg)](https://cloud.google.com/)
+**Built for the Google Cloud "Agentic Cinema: The Blockbuster Hackathon" ($75,000 Prize Pool)**
+**Track: ClickHouse Partner Track**
 
----
+CINESTATE is a Production Memory & Intelligence Platform designed to eliminate Hollywood's multi-million dollar continuity errors. By orchestrating **Gemini 2.0 Flash Vision** and **ClickHouse Cloud** via the **Model Context Protocol (MCP)**, CINESTATE actively monitors live camera feeds on set and instantly cross-references them against script baseline facts to detect continuity hallucinations (errors) before the director yells "Cut."
 
-## 📽️ The Problem
-Film and television productions lose **$50,000 to $500,000 per reshoot day** due to undetected continuity errors caught weeks after filming. An actor’s injury on the wrong arm, a wristwatch switched between takes, or a costume change between connected scenes can ruin millions of dollars in footage.
+![CINESTATE Dashboard](https://raw.githubusercontent.com/google/material-design-icons/master/png/action/visibility/materialicons/24dp/2x/baseline_visibility_black_24dp.png) *(Insert your actual screenshot here!)*
 
-A film is not a static collection of files — **it is a continuously evolving state machine**.
+## 🏆 Hackathon Alignment (Why This Solves the Problem)
+In film production, a continuity error (e.g., an actor wearing a watch in take 1, but not in take 2) can cost **$1,500+ per hour** to reshoot on set, or upwards of **$45,000** to fix in post-production VFX. 
 
----
+CINESTATE solves this real-world enterprise friction by:
+1. **Establishing Ground Truth:** Parsing screenplays to extract baseline facts (wardrobe, props, injuries).
+2. **Agentic Memory (ClickHouse MCP):** Storing all entities, attributes, and temporal events in ClickHouse Cloud for lightning-fast, vector-capable retrieval via an MCP server.
+3. **Live Vision (Gemini 2.0 Flash + TFJS):** Running local TensorFlow.js object detection on the director's monitor, while sending critical frames to Gemini 2.0 Flash to evaluate complex state (e.g., "Is the injury bandage on the left or right arm?").
+4. **Deterministic Resolution:** Alerting the director in real-time if a conflict is found, providing immediate financial ROI options (Reshoot vs. Post-Fix).
 
-## 🚀 What CINESTATE Does
-CINESTATE is an autonomous media-production state intelligence engine powered by:
-- **Google Gemini 2.0 Flash**: Multimodal perception extracting precise visual observations from video takes.
-- **Google Agent Development Kit (ADK)**: Multi-agent orchestration (Orchestrator, Script, Evidence, State, Conflict, Impact, Recommendation).
-- **ClickHouse Cloud**: Immutable production event memory and state snapshot history.
-- **`mcp-clickhouse`**: Runtime Model Context Protocol (MCP) server allowing ADK agents to query ClickHouse directly.
-- **Deterministic Conflict Engine**: Pure Python state comparison (`left_arm != right_arm`) preventing LLM hallucination.
+## 🚀 Architecture & Tech Stack
+- **Google Cloud AI:** Gemini 2.0 Flash (`google-genai` SDK v2.17) for multimodal frame analysis.
+- **Partner Integration (ClickHouse):** ClickHouse Cloud used as the persistent memory ledger. Connected via the official `mcp-clickhouse` server to allow the AI Agent to query past scene states deterministically.
+- **Frontend:** React + Vite, GSAP 3D ScrollTrigger Animations, Tailwind CSS, Google Material 3 Design System.
+- **Local Browser ML:** TensorFlow.js + COCO-SSD running directly on the `<canvas>` for real-time bounding box tracking.
+- **Backend/Agents:** FastAPI (Python), LangChain/Smolagents orchestration.
 
----
+## 🛠️ How to Run Locally
 
-## 🏛️ System Architecture
+### Prerequisites
+- Node.js (v18+)
+- Python 3.11+
+- ClickHouse Cloud Account URL & Credentials
+- Google Cloud / Gemini API Key
 
-```
-                    ┌──────────────────────────────┐
-                    │      React + Vite SPA        │
-                    │   Cinematic Control Station  │
-                    └──────────────┬───────────────┘
-                                   │ HTTP / API
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │     Node.js Express API      │
-                    │  Gateway & Dashboard Router  │
-                    └──────────────┬───────────────┘
-                                   │
-             ┌─────────────────────┴─────────────────────┐
-             │                                           │
-             ▼                                           ▼
-┌─────────────────────────┐                ┌─────────────────────────┐
-│   Python AI Service     │                │   ClickHouse Cloud      │
-│  FastAPI + ADK Agents   │                │   Production Memory     │
-└────────────┬────────────┘                └─────────────▲───────────┘
-             │                                           │
-             ├─────────────────── MCP ───────────────────┤
-             │           `mcp-clickhouse` server         │
-             │                                           │
-             ▼                                           │
-┌─────────────────────────┐                              │
-│   Google Gemini 2.0     │──────────────────────────────┘
-│   Multimodal Vision     │ (Reads/Writes Production Events)
-└─────────────────────────┘
-```
-
----
-
-## 🛠️ ClickHouse Schema (7 Core Tables)
-All application state lives in ClickHouse Cloud — **Zero MongoDB dependency**.
-
-1. `production_events`: Immutable log of every script fact, video observation, and agent action.
-2. `state_snapshots`: Point-in-time state of characters, props, and costumes per scene.
-3. `continuity_conflicts`: Recorded conflicts with expected vs observed values, confidence, and status.
-4. `scene_dependencies`: Graph tracking which future scenes depend on state established in earlier scenes.
-5. `agent_audit_log`: Real-time telemetry for all ADK agent tool calls and latencies.
-6. `projects`: High-level production metadata.
-7. `scenes`: Scene breakdowns, locations, and time-of-day attributes.
-
----
-
-## ⚡ Quick Start / Local Setup
-
-### 1. Environment Setup
-Copy `.env.example` to `.env` and add your ClickHouse Cloud credentials and Gemini API key:
+### 1. Start the Frontend
 ```bash
-CLICKHOUSE_HOST=your-instance.clickhouse.cloud
-CLICKHOUSE_PORT=8443
-CLICKHOUSE_USER=default
-CLICKHOUSE_PASSWORD=your-password
-CLICKHOUSE_SECURE=true
-
-GEMINI_API_KEY=AIzaSy...
-```
-
-### 2. Initialize Database & Seed Demo Data
-```bash
-# Initialize 7 ClickHouse tables
-python3 init_schema.py
-
-# Seed Project Aurora conflict scenario
-python3 seed_demo.py
-```
-
-### 3. Start Backend & AI Service
-```bash
-# Terminal 1: Python AI Service
-cd ai-service
-python3.11 -m uvicorn app.main:app --port 8000 --reload
-
-# Terminal 2: Node.js Express Gateway
-cd backend
-npm install
-npm run dev
-
-# Terminal 3: React Frontend
 cd frontend
 npm install
 npm run dev
+# Running on http://localhost:5173
 ```
 
-Visit `http://localhost:5173` to open the CINESTATE Control Station!
+### 2. Start the Backend API Gateway
+```bash
+cd backend
+npm install
+npm run dev
+# Running on http://localhost:3002
+```
 
----
+### 3. Start the AI Service & Agents
+```bash
+cd ai-service
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
-## 📜 License
-This project is licensed under the [MIT License](LICENSE).
+*Ensure you configure your `.env` files in both backend and ai-service with your `CLICKHOUSE_URL`, `CLICKHOUSE_PASSWORD`, and `GEMINI_API_KEY`!*
+
+## 🎬 The 3-Minute Demo Scenario (How to Test)
+1. Open the **Cinematic Landing Page** (`http://localhost:5173/`).
+2. Scroll down to experience the GSAP 3D depth interaction, then click **Launch Studio Dashboard**.
+3. Navigate to **Live Camera Stream** (`/live-monitor`).
+4. Click **Connect Live Camera Stream**. You will see TensorFlow.js drawing real-time bounding boxes around you.
+5. Click **Demo Conflict Scenario**. CINESTATE will simulate capturing a frame, sending it to Gemini, checking ClickHouse memory, and discovering that the actor's injury is on the wrong arm compared to the script baseline!
+6. Review the HUD Alert box recommending a reshoot to save post-production costs.
+
+## 📄 License
+This project is open-source under the MIT License. See the [LICENSE](LICENSE) file for details.
