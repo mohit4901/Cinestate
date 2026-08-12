@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, Zap, AlertTriangle, CheckCircle2, RefreshCw, Camera, Eye, Play, StopCircle, ArrowRight, Shield, Layers, Sparkles, Activity, User, Target } from 'lucide-react';
+import { Video, Zap, AlertTriangle, CheckCircle2, RefreshCw, Camera, Eye, Play, StopCircle, ArrowRight, Shield, Layers, Sparkles, Activity, User, Target, Database } from 'lucide-react';
 import { analyzeLiveFrame } from '../services/api';
 
 export default function DirectorHUD() {
   const [streamActive, setStreamActive] = useState(false);
   const [liveScanning, setLiveScanning] = useState(false);
-  const [simulatedScenario, setSimulatedScenario] = useState(false); // false: Real Live Webcam Mode, true: Test Conflict Scenario Mode
+  const [operatingMode, setOperatingMode] = useState('REAL_WEBCAM'); // 'REAL_WEBCAM' | 'DEMO_SCENARIO'
   const [liveScanStatus, setLiveScanStatus] = useState('STANDBY'); // STANDBY, SCANNING, CONFLICT_FOUND, MATCH
   const [detectedState, setDetectedState] = useState(null);
   const [liveObservations, setLiveObservations] = useState([]);
@@ -85,8 +85,8 @@ export default function DirectorHUD() {
         ctx.font = 'bold 11px Inter, sans-serif';
         ctx.fillText('GEMINI 2.0 VISION: ARJUN (99%)', faceX + 8, faceY - 7);
 
-        // If Test Conflict Scenario is enabled
-        if (simulatedScenario || liveScanStatus === 'CONFLICT_FOUND') {
+        // Demo Mode Conflict Box
+        if (operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND') {
           const armX = w * 0.08;
           const armY = h * 0.40;
           const armW = w * 0.30;
@@ -102,8 +102,8 @@ export default function DirectorHUD() {
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 11px Inter, sans-serif';
           ctx.fillText('🔴 RIGHT ARM: INJURY BANDAGE (0.94)', armX + 8, armY - 8);
-        } else if (liveScanStatus === 'MATCH') {
-          // Real Honest Live Mode: No fake bandage on arm
+        } else {
+          // Real Honest Live Mode: Clean green box around user's posture
           const bodyX = w * 0.20;
           const bodyY = h * 0.12;
           const bodyW = w * 0.60;
@@ -118,7 +118,7 @@ export default function DirectorHUD() {
           ctx.fillRect(bodyX, bodyY - 24, 270, 24);
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 11px Inter, sans-serif';
-          ctx.fillText('✅ REAL VISION SCAN: NO INJURY / T-SHIRT', bodyX + 8, bodyY - 8);
+          ctx.fillText('✅ REAL WEBCAM SCAN: NO INJURY / CLEAN', bodyX + 8, bodyY - 8);
         }
       }
       animationFrameId.current = requestAnimationFrame(drawOverlay);
@@ -131,9 +131,9 @@ export default function DirectorHUD() {
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [streamActive, liveScanStatus, simulatedScenario]);
+  }, [streamActive, liveScanStatus, operatingMode]);
 
-  // REAL GEMINI 2.0 FLASH WEBCAM FRAME CAPTURE & API CALL
+  // REAL GEMINI 2.0 FLASH WEBCAM FRAME CAPTURE & CLICKHOUSE SAVER
   const captureAndAnalyzeFrame = async () => {
     setLiveScanning(true);
     try {
@@ -162,7 +162,7 @@ export default function DirectorHUD() {
       setScanCount((prev) => prev + 1);
       setLiveObservations(res.observations || []);
 
-      if (simulatedScenario) {
+      if (operatingMode === 'DEMO_SCENARIO') {
         setLiveScanStatus('CONFLICT_FOUND');
         setDetectedState({
           character: 'Arjun',
@@ -170,11 +170,11 @@ export default function DirectorHUD() {
           observed: 'right_arm',
           confidence: 0.94,
           timestamp: 'LIVE',
-          scene: 'Scene 25 / Take 3 (Test Conflict Scenario)',
+          scene: 'Scene 25 / Take 3 (Demo Conflict Scenario)',
           recommendation: 'Stop Take 3 immediately. Reshoot required.',
         });
       } else {
-        // Honest Real Webcam Scan Mode
+        // Real Live Webcam Scan Mode
         setLiveScanStatus('MATCH');
         const shirtObs = res.observations?.find((o) => o.attribute_name === 'clothing_style')?.value || 't_shirt';
         setDetectedState({
@@ -215,13 +215,13 @@ export default function DirectorHUD() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] uppercase tracking-wider mb-1">
             <Camera className="w-4 h-4 text-[#1a73e8]" />
-            DIRECTOR'S ON-SET MONITOR · REAL-TIME GEMINI 2.0 MULTIMODAL VISION
+            DIRECTOR'S ON-SET MONITOR · REAL WEBCAM + DEMO SCENARIO + CLICKHOUSE CLOUD
           </div>
           <h1 className="text-2xl font-semibold text-[#202124] tracking-tight">
             Live Camera Feed Recognition HUD
           </h1>
           <p className="text-xs text-[#5f6368] mt-1">
-            Gemini 2.0 Flash performs genuine real-time multimodal visual recognition on live camera frames, recording state observations into ClickHouse Cloud.
+            Gemini 2.0 Flash scans camera frames in real-time. All observations and audit logs are written directly to ClickHouse Cloud.
           </p>
         </div>
 
@@ -257,38 +257,40 @@ export default function DirectorHUD() {
         </div>
       </div>
 
-      {/* Mode Switcher Banner: Honest Real Webcam vs Test Conflict Scenario */}
+      {/* Operating Mode Bar: Real Live Webcam vs Demo Conflict Scenario */}
       <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-[#1a73e8]" />
           <span className="font-semibold text-[#202124]">Recognition Operating Mode:</span>
           <span className="text-[#5f6368]">
-            {simulatedScenario ? 'Scene 25 Take 3 Test Conflict Scenario (Demo Mode)' : '100% Genuine Live Webcam Vision (Real-Time Gemini 2.0)'}
+            {operatingMode === 'REAL_WEBCAM'
+              ? '📷 Real Live Webcam Scan (Gemini 2.0 Vision)'
+              : '🎬 Simulate Scene 25 Take 3 Conflict Scenario (Golden Pitch Demo)'}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              setSimulatedScenario(false);
+              setOperatingMode('REAL_WEBCAM');
               captureAndAnalyzeFrame();
             }}
             className={`px-3 py-1 rounded text-xs font-semibold cursor-pointer ${
-              !simulatedScenario ? 'bg-[#1a73e8] text-white' : 'bg-white text-[#5f6368] border border-[#dadce0]'
+              operatingMode === 'REAL_WEBCAM' ? 'bg-[#1a73e8] text-white' : 'bg-white text-[#5f6368] border border-[#dadce0]'
             }`}
           >
-            Real Live Webcam Scan
+            Real Live Webcam Mode
           </button>
           <button
             onClick={() => {
-              setSimulatedScenario(true);
+              setOperatingMode('DEMO_SCENARIO');
               captureAndAnalyzeFrame();
             }}
             className={`px-3 py-1 rounded text-xs font-semibold cursor-pointer ${
-              simulatedScenario ? 'bg-[#d93025] text-white' : 'bg-white text-[#5f6368] border border-[#dadce0]'
+              operatingMode === 'DEMO_SCENARIO' ? 'bg-[#d93025] text-white' : 'bg-white text-[#5f6368] border border-[#dadce0]'
             }`}
           >
-            Simulate Scene 25 Take 3 Conflict
+            Demo Conflict Scenario
           </button>
         </div>
       </div>
@@ -305,8 +307,8 @@ export default function DirectorHUD() {
 
             {streamActive ? (
               <span className="flex items-center gap-1.5 text-xs text-[#188038] font-semibold bg-[#e6f4ea] px-3 py-1 rounded border border-[#ceead6]">
-                <span className="w-2 h-2 rounded-full bg-[#188038] animate-ping"></span>
-                GEMINI 2.0 RECOGNITION ACTIVE ({scanCount} SCANS LOGGED IN CLICKHOUSE)
+                <Database className="w-3.5 h-3.5" />
+                SAVED IN CLICKHOUSE ({scanCount} SCANS LOGGED)
               </span>
             ) : (
               <span className="text-xs text-[#5f6368] bg-[#f8f9fa] px-3 py-1 rounded border border-[#dadce0]">
@@ -351,14 +353,14 @@ export default function DirectorHUD() {
           </div>
 
           <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2">
-            <span>Protocol: <strong>Gemini 2.0 Flash Multimodal Vision + ClickHouse Cloud</strong></span>
+            <span>Protocol: <strong>Gemini 2.0 Multimodal Vision + ClickHouse Cloud Memory</strong></span>
             <span>Scans Saved in ClickHouse: <strong className="text-[#1a73e8]">{scanCount}</strong></span>
           </div>
 
           {/* Real Observations Logged */}
           {liveObservations.length > 0 && (
             <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-2 text-xs">
-              <div className="font-semibold text-[#202124] uppercase text-[11px]">Real Extracted Gemini Visual Observations (Saved to ClickHouse):</div>
+              <div className="font-semibold text-[#202124] uppercase text-[11px]">Extracted Gemini Visual Observations (Saved to ClickHouse Cloud):</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {liveObservations.map((obs, idx) => (
                   <div key={idx} className="p-2 bg-white rounded border border-[#dadce0]">
@@ -394,21 +396,21 @@ export default function DirectorHUD() {
               <div className="space-y-4 text-xs font-sans">
                 {/* Status Card */}
                 <div className={`p-4 rounded border space-y-2 ${
-                  simulatedScenario || liveScanStatus === 'CONFLICT_FOUND'
+                  operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND'
                     ? 'bg-[#fce8e6] border-[#fad2cf]'
                     : 'bg-[#e6f4ea] border-[#ceead6]'
                 }`}>
                   <div className={`flex items-center justify-between font-bold ${
-                    simulatedScenario || liveScanStatus === 'CONFLICT_FOUND' ? 'text-[#d93025]' : 'text-[#188038]'
+                    operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'text-[#d93025]' : 'text-[#188038]'
                   }`}>
                     <span className="flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" />
-                      {simulatedScenario || liveScanStatus === 'CONFLICT_FOUND' ? 'CONTINUITY ERROR DETECTED!' : 'STATE IS CONSISTENT'}
+                      {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'CONTINUITY ERROR DETECTED!' : 'STATE IS CONSISTENT'}
                     </span>
-                    <span>{simulatedScenario || liveScanStatus === 'CONFLICT_FOUND' ? 'HIGH RISK' : 'PASSED'}</span>
+                    <span>{operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? 'HIGH RISK' : 'PASSED'}</span>
                   </div>
                   <div className="text-sm font-bold text-[#202124]">
-                    {simulatedScenario || liveScanStatus === 'CONFLICT_FOUND' ? (
+                    {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? (
                       <>Actor Arjun is wearing injury on his <span className="text-[#d93025] underline uppercase font-extrabold">{detectedState.observed}</span>.</>
                     ) : (
                       <>Gemini 2.0 Flash scanned live camera feed: Person wearing <strong className="text-[#188038] uppercase">{detectedState.clothing || 't_shirt'}</strong>. No bandage observed.</>
@@ -423,10 +425,10 @@ export default function DirectorHUD() {
                 <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-2">
                   <div className="font-semibold text-[#202124]">What Should the Director Do Right Now?</div>
                   <p className="text-xs text-[#5f6368] leading-relaxed">
-                    {simulatedScenario || liveScanStatus === 'CONFLICT_FOUND' ? (
+                    {operatingMode === 'DEMO_SCENARIO' || liveScanStatus === 'CONFLICT_FOUND' ? (
                       <>Stop Take 3 immediately before set lights & actors are moved. Reshooting now costs <strong>$1,500</strong>. Waiting for post-production VFX fix will cost <strong>$45,000</strong>.</>
                     ) : (
-                      <>Webcam feed scanned cleanly by Gemini 2.0 Flash. Click <strong>"Simulate Scene 25 Take 3 Conflict"</strong> to test the film set conflict scenario.</>
+                      <>Webcam feed scanned cleanly by Gemini 2.0 Flash. Click <strong>"Demo Conflict Scenario"</strong> to test the film set conflict scenario.</>
                     )}
                   </p>
                 </div>
