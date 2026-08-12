@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Production from './pages/Production';
 import Script from './pages/Script';
 import Footage from './pages/Footage';
+import DirectorHUD from './pages/DirectorHUD';
 import Conflicts from './pages/Conflicts';
 import ProductionSearch from './pages/ProductionSearch';
 import AgentActivity from './pages/AgentActivity';
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="production" element={<Production />} />
           <Route path="script" element={<Script />} />
           <Route path="footage" element={<Footage />} />
+          <Route path="live-monitor" element={<DirectorHUD />} />
           <Route path="conflicts" element={<Conflicts />} />
           <Route path="search" element={<ProductionSearch />} />
           <Route path="agents" element={<AgentActivity />} />

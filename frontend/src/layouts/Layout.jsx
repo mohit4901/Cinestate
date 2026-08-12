@@ -23,6 +23,7 @@ import {
   BookOpen,
   Info,
   CheckCircle,
+  Camera,
 } from 'lucide-react';
 
 export default function Layout() {
@@ -49,6 +50,7 @@ export default function Layout() {
     {
       title: 'PRODUCTION',
       items: [
+        { path: '/live-monitor', label: 'Live Camera Stream', icon: Camera, badge: 'LIVE' },
         { path: '/production', label: 'Production State', icon: Database },
         { path: '/script', label: 'Scripts', icon: FileText },
         { path: '/footage', label: 'Footage', icon: Video },
@@ -194,7 +196,11 @@ export default function Layout() {
                             {!sidebarCollapsed && <span>{item.label}</span>}
                           </div>
                           {!sidebarCollapsed && item.badge && (
-                            <span className="px-1.5 py-0.2 text-[10px] font-bold rounded bg-[#fce8e6] text-[#d93025] border border-[#fad2cf]">
+                            <span className={`px-1.5 py-0.2 text-[10px] font-bold rounded ${
+                              item.badge === 'LIVE'
+                                ? 'bg-[#e6f4ea] text-[#188038] border border-[#ceead6]'
+                                : 'bg-[#fce8e6] text-[#d93025] border border-[#fad2cf]'
+                            }`}>
                               {item.badge}
                             </span>
                           )}
@@ -245,43 +251,43 @@ export default function Layout() {
             </div>
 
             <p className="text-xs text-[#5f6368]">
-              CINESTATE requires zero technical setup for film crews. Anyone on set (Director, Producer, Script Supervisor) can operate CINESTATE by following 4 simple steps:
+              CINESTATE requires zero technical setup for film crews. Anyone on set (Director, Producer, Script Supervisor) can operate CINESTATE by following simple steps:
             </p>
 
             <div className="space-y-3 font-sans text-xs">
               <div className="p-3 rounded bg-[#e8f0fe] border border-[#d2e3fc] space-y-1">
                 <div className="font-bold text-[#1a73e8] flex justify-between">
-                  <span>Step 1: Upload Screenplay (`/script`)</span>
-                  <span>Baseline Facts</span>
+                  <span>Live Wireless Camera Feed (`/live-monitor`)</span>
+                  <span>Real-time Recognition</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Drag & drop your screenplay PDF. Gemini 2.0 Flash automatically reads the script and establishes baseline scene facts (wardrobe, injuries, watches) in ClickHouse Cloud memory.
+                  Connect director camera stream (RTSP/Webcam). Gemini Vision scans live video frames continuously, flagging continuity errors on screen before wrapping set!
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-1">
                 <div className="font-bold text-[#202124] flex justify-between">
-                  <span>Step 2: Upload Video Takes (`/footage`)</span>
-                  <span>Camera Card Ingestion</span>
+                  <span>Step 1: Upload Screenplay (`/script`)</span>
+                  <span>Baseline Facts</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  Upload video footage takes from set camera cards (.mp4/.mov). Gemini Vision scans actor wardrobe, props, and injuries to extract visual facts automatically.
+                  Drag & drop your screenplay PDF. Gemini 2.0 Flash reads the script and establishes baseline scene facts (wardrobe, injuries, watches) in ClickHouse Cloud memory.
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#fce8e6] border border-[#fad2cf] space-y-1">
                 <div className="font-bold text-[#d93025] flex justify-between">
-                  <span>Step 3: Review Conflicts (`/conflicts`)</span>
+                  <span>Step 2: Review Conflicts (`/conflicts`)</span>
                   <span>Anti-Hallucination Engine</span>
                 </div>
                 <p className="text-[#5f6368]">
-                  CINESTATE automatically compares script facts against footage. If an error is found (e.g. Left Arm vs Right Arm), it flags the mismatch with full evidence provenance.
+                  CINESTATE automatically compares script facts against camera footage. Mismatches (e.g. Left Arm vs Right Arm) are flagged with evidence provenance.
                 </p>
               </div>
 
               <div className="p-3 rounded bg-[#e6f4ea] border border-[#ceead6] space-y-1">
                 <div className="font-bold text-[#188038] flex justify-between">
-                  <span>Step 4: Director Action Planner (`/conflicts`)</span>
+                  <span>Step 3: Director Action Planner (`/conflicts`)</span>
                   <span>Financial ROI</span>
                 </div>
                 <p className="text-[#5f6368]">
