@@ -210,7 +210,8 @@ export default function Landing() {
       const introTl = gsap.timeline({ delay: 0.3 });
       introTl
         .to(".text-track", { duration: 1.8, autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", rotationX: 0, ease: "expo.out" })
-        .to(".text-days", { duration: 1.4, clipPath: "inset(0 0% 0 0)", ease: "power4.inOut" }, "-=1.0");
+        .to(".text-days", { duration: 1.4, clipPath: "inset(0 0% 0 0)", ease: "power4.inOut" }, "-=1.0")
+        .to(".scroll-indicator", { duration: 1.2, autoAlpha: 1, y: -20, ease: "power3.out" }, "-=0.8");
 
       const scrollTl = gsap.timeline({
         scrollTrigger: {
@@ -277,6 +278,12 @@ export default function Landing() {
         <h1 className="text-days gsap-reveal text-silver-matte text-4xl md:text-6xl lg:text-[5.5rem] font-extrabold tracking-tighter">
           Zero Hallucination Continuity.
         </h1>
+        
+        {/* Scroll Indicator */}
+        <div className="scroll-indicator gsap-reveal absolute -bottom-[120px] flex flex-col items-center justify-center gap-3 text-[#5f6368]">
+           <span className="text-xs tracking-[0.25em] uppercase font-bold text-[#1a73e8]">Scroll to Explore</span>
+           <div className="w-[2px] h-16 bg-gradient-to-b from-[#1a73e8] to-transparent animate-bounce rounded-full"></div>
+        </div>
       </div>
 
       {/* BACKGROUND LAYER 2: Tactile CTA Buttons */}

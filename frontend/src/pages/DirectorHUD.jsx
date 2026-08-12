@@ -19,31 +19,54 @@ export default function DirectorHUD() {
   const overlayCanvasRef = useRef(null);
   const animationFrameId = useRef(null);
 
-  // ── LOAD REAL TENSORFLOW.JS (COCO-SSD) LOCAL MODEL VIA CDN ──
+  // ── SAFELY LOAD TENSORFLOW.JS (COCO-SSD) LOCAL MODEL VIA CDN ──
   useEffect(() => {
-    const loadTFJS = async () => {
-      if (window.tf && window.cocoSsd) {
-        const model = await window.cocoSsd.load();
-        setLocalModel(model);
-        setTfjsLoaded(true);
-        return;
-      }
-      
-      const tfScript = document.createElement('script');
-      tfScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs";
-      tfScript.onload = () => {
-        const cocoScript = document.createElement('script');
-        cocoScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd";
-        cocoScript.onload = async () => {
+    let isMounted = true;
+    
+    const initModel = async () => {
+      try {
+        if (window.cocoSsd && isMounted) {
           const model = await window.cocoSsd.load();
-          setLocalModel(model);
-          setTfjsLoaded(true);
-        };
-        document.head.appendChild(cocoScript);
+          if (isMounted) {
+            setLocalModel(model);
+            setTfjsLoaded(true);
+          }
+        }
+      } catch (err) {
+        console.error("TFJS initialization error:", err);
+      }
+    };
+
+    let tfScript = document.getElementById('tfjs-cdn-script');
+    if (!tfScript) {
+      tfScript = document.createElement('script');
+      tfScript.id = 'tfjs-cdn-script';
+      tfScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs";
+      
+      tfScript.onload = () => {
+        let cocoScript = document.getElementById('coco-cdn-script');
+        if (!cocoScript) {
+          cocoScript = document.createElement('script');
+          cocoScript.id = 'coco-cdn-script';
+          cocoScript.src = "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd";
+          cocoScript.onload = initModel;
+          document.head.appendChild(cocoScript);
+        } else {
+          initModel();
+        }
       };
       document.head.appendChild(tfScript);
+    } else {
+      if (window.cocoSsd) {
+        initModel();
+      } else {
+        setTimeout(initModel, 1500);
+      }
+    }
+
+    return () => {
+      isMounted = false;
     };
-    loadTFJS();
   }, []);
 
   // Toggle Live Webcam / Wireless Camera Feed
@@ -106,7 +129,6 @@ export default function DirectorHUD() {
             predictions.forEach((pred) => {
               const [x, y, width, height] = pred.bbox;
               
-              // Draw real ML bounding box!
               ctx.strokeStyle = '#1a73e8';
               ctx.lineWidth = 3;
               ctx.setLineDash([]);
@@ -197,7 +219,6 @@ export default function DirectorHUD() {
           recommendation: 'Stop Take 3 immediately. Reshoot required.',
         });
       } else {
-        // Honest Real Webcam Scan Mode
         setLiveScanStatus('MATCH');
         const shirtObs = res.observations?.find((o) => o.attribute_name === 'clothing_style')?.value || 'unknown_local_fallback';
         setDetectedState({
@@ -280,7 +301,7 @@ export default function DirectorHUD() {
         </div>
       </div>
 
-      {/* Operating Mode Bar: Real Live Webcam vs Demo Conflict Scenario */}
+      {/* Operating Mode Bar */}
       <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-[#1a73e8]" />
@@ -350,16 +371,14 @@ export default function DirectorHUD() {
               className="w-full h-full object-cover"
             />
 
-            {/* Real-time Bounding Box Canvas Overlay */}
-            {streamActive && (
-              <canvas
-                ref={overlayCanvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none z-20"
-              />
-            )}
+            {/* KEEP Canvas always mounted in DOM, just hide/show via CSS to avoid React unmount crashes */}
+            <canvas
+              ref={overlayCanvasRef}
+              className={`absolute inset-0 w-full h-full pointer-events-none z-20 ${streamActive ? 'block' : 'hidden'}`}
+            />
 
             {!streamActive && (
-              <div className="absolute inset-0 bg-[#202124] flex flex-col items-center justify-center space-y-3 text-white p-6 text-center">
+              <div className="absolute inset-0 bg-[#202124] flex flex-col items-center justify-center space-y-3 text-white p-6 text-center z-30">
                 <Camera className="w-12 h-12 text-[#5f6368]" />
                 <div className="text-sm font-semibold">Director Camera Feed Standby</div>
                 <p className="text-xs text-slate-400 max-w-md">
