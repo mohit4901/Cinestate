@@ -9,6 +9,7 @@ Integrates:
 
 import logging
 import json
+import sys
 from contextlib import asynccontextmanager, AsyncExitStack
 from typing import Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query
@@ -54,7 +55,7 @@ async def lifespan(app: FastAPI):
     # Initialize Official ClickHouse MCP Server
     mcp_exit_stack = AsyncExitStack()
     server_params = StdioServerParameters(
-        command="python",
+        command=sys.executable,
         args=["-m", "app.agents.mcp_server"], 
         env=None
     )

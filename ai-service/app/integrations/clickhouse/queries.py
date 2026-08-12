@@ -19,15 +19,14 @@ SELECT_CHARACTER_HISTORY = """
         pe.source_type,
         pe.source_reference,
         pe.event_type,
-        pe.agent_name,
-        pe.created_at
+        pe.agent_name
     FROM production_events AS pe
     WHERE
         pe.project_id   = {project_id:String}
         AND pe.entity_id = {character:String}
         AND pe.attribute_name = {attribute:String}
         AND pe.observed_value != ''
-    ORDER BY pe.scene_id ASC, pe.created_at ASC
+    ORDER BY pe.scene_id ASC
 """
 
 # ── Scene History ─────────────────────────────────────────────
@@ -46,13 +45,11 @@ SELECT_SCENE_HISTORY = """
         confidence,
         source_type,
         source_reference,
-        agent_name,
-        created_at
+        agent_name
     FROM production_events
     WHERE
         project_id = {project_id:String}
         AND scene_id = {scene_id:String}
-    ORDER BY created_at ASC
 """
 
 # ── Take Observations ─────────────────────────────────────────
@@ -67,14 +64,12 @@ SELECT_TAKE_OBSERVATIONS = """
         observed_value,
         confidence,
         source_reference,
-        metadata,
-        created_at
+        metadata
     FROM production_events
     WHERE
         project_id = {project_id:String}
         AND take_id = {take_id:String}
         AND event_type IN ('VIDEO_OBSERVATION', 'AUDIO_OBSERVATION', 'DIALOGUE_OBSERVATION')
-    ORDER BY created_at ASC
 """
 
 # ── Open Conflicts ────────────────────────────────────────────
@@ -93,8 +88,7 @@ SELECT_OPEN_CONFLICTS = """
         severity,
         status,
         blast_radius,
-        recommendation,
-        created_at
+        recommendation
     FROM continuity_conflicts
     WHERE
         project_id = {project_id:String}
@@ -105,8 +99,7 @@ SELECT_OPEN_CONFLICTS = """
             WHEN 'MEDIUM' THEN 2
             WHEN 'LOW'    THEN 3
             ELSE 4
-        END ASC,
-        created_at DESC
+        END ASC
 """
 
 # ── Single Conflict ───────────────────────────────────────────
@@ -124,8 +117,7 @@ SELECT_DOWNSTREAM_DEPENDENCIES = """
         sd.depends_on_scene  AS source_scene,
         sd.entity_id,
         sd.attribute_name,
-        sd.dependency_type,
-        sd.created_at
+        sd.dependency_type
     FROM scene_dependencies AS sd
     WHERE
         sd.project_id       = {project_id:String}
@@ -143,13 +135,12 @@ SELECT_STATE_SNAPSHOTS = """
         attribute_name,
         attribute_value,
         confidence,
-        introduced_scene,
-        created_at
+        introduced_scene
     FROM state_snapshots
     WHERE
         project_id = {project_id:String}
         AND scene_id <= {scene_id:String}
-    ORDER BY scene_id DESC, created_at DESC
+    ORDER BY scene_id DESC
 """
 
 # ── Project Stats (Dashboard) ─────────────────────────────────
@@ -181,11 +172,9 @@ SELECT_AGENT_EVENTS = """
         result_summary,
         status,
         latency_ms,
-        approval_status,
-        created_at
+        approval_status
     FROM agent_audit_log
     WHERE project_id = {project_id:String}
-    ORDER BY created_at DESC
     LIMIT {limit:UInt32}
 """
 

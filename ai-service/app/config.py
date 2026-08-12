@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     google_application_credentials: Optional[str] = None
 
     # ── Gemini ───────────────────────────────────────────────
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-3.5-flash"
     gemini_api_key: Optional[str] = None
 
     # ── ClickHouse ───────────────────────────────────────────

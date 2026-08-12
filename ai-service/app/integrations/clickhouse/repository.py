@@ -419,7 +419,6 @@ class ClickHouseRepository:
             SELECT *
             FROM production_events
             WHERE {where}
-            ORDER BY created_at DESC
             LIMIT {{limit:UInt32}}
         """
         client = get_client()
