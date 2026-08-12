@@ -17,14 +17,14 @@ import {
   FileText,
   Video,
   CheckSquare,
-  HelpCircle,
-  Zap,
+  Filter,
 } from 'lucide-react';
 import { getConflicts, approveConflict } from '../services/api';
 
 export default function Conflicts() {
   const [conflicts, setConflicts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterSeverity, setFilterSeverity] = useState('ALL');
   const [actionMessage, setActionMessage] = useState(null);
   const [selectedAction, setSelectedAction] = useState('OPTION_A');
   const [directorNotes, setDirectorNotes] = useState('');
@@ -50,7 +50,7 @@ export default function Conflicts() {
       await approveConflict(conflictId, 'Director', actionType);
       setActionMessage({
         type: 'success',
-        text: `Action executed: ${actionType} recorded for Conflict ID ${conflictId.slice(0, 8)}... Audit record committed to ClickHouse Cloud.`,
+        text: `Action executed: ${actionType} logged for Conflict ID ${conflictId.slice(0, 8)}... Audit record committed to ClickHouse Cloud.`,
       });
       fetchConflicts();
     } catch (err) {
@@ -60,42 +60,56 @@ export default function Conflicts() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Incident Console Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#dadce0] pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#c5221f] uppercase tracking-wider mb-1">
-            <Shield className="w-3.5 h-3.5" />
-            Human-in-the-Loop Studio Governance Engine
-          </div>
-          <h1 className="text-2xl font-bold text-[#202124] tracking-tight">
-            Continuity Conflict Center & Action Planner
+          <h1 className="text-2xl font-normal text-[#202124] tracking-tight">
+            Continuity Conflicts
           </h1>
-          <p className="text-sm text-[#5f6368] mt-1">
-            Review automatically detected state-breaking evidence. Every action option provides cost-impact analysis and writes immutable governance events into ClickHouse Cloud.
+          <p className="text-xs text-[#5f6368] mt-1">
+            Detected state inconsistencies across production evidence.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 font-mono text-xs text-[#202124] bg-white px-3.5 py-2 rounded-xl border border-[#dadce0] shadow-xs">
-            <Database className="w-4 h-4 text-[#1a73e8]" />
-            <span>ClickHouse Memory: <code className="text-[#1a73e8] font-bold">continuity_conflicts</code></span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#5f6368] font-mono">ClickHouse Memory:</span>
+          <span className="gc-chip-blue font-mono">continuity_conflicts</span>
         </div>
+      </div>
+
+      {/* Filter Chips Row */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-[#5f6368] uppercase mr-2 flex items-center gap-1">
+          <Filter className="w-3.5 h-3.5" /> Filter:
+        </span>
+        {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'RESOLVED'].map((sev) => (
+          <button
+            key={sev}
+            onClick={() => setFilterSeverity(sev)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer ${
+              filterSeverity === sev
+                ? 'bg-[#1a73e8] text-white'
+                : 'bg-[#f8f9fa] text-[#5f6368] hover:bg-[#f1f3f4] border border-[#dadce0]'
+            }`}
+          >
+            {sev}
+          </button>
+        ))}
       </div>
 
       {actionMessage && (
         <div
-          className={`p-4 rounded-xl border flex items-center justify-between text-xs ${
+          className={`p-4 rounded-md border flex items-center justify-between text-xs ${
             actionMessage.type === 'success'
-              ? 'bg-[#e6f4ea] border-[#ceead6] text-[#137333]'
-              : 'bg-[#fce8e6] border-[#fad2cf] text-[#c5221f]'
+              ? 'bg-[#e6f4ea] border-[#ceead6] text-[#188038]'
+              : 'bg-[#fce8e6] border-[#fad2cf] text-[#d93025]'
           }`}
         >
           <div className="flex items-center gap-2 font-semibold">
             <FileCheck className="w-4 h-4" />
             <span>{actionMessage.text}</span>
           </div>
-          <button onClick={() => setActionMessage(null)} className="hover:opacity-75">
+          <button onClick={() => setActionMessage(null)} className="hover:opacity-75 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -104,11 +118,11 @@ export default function Conflicts() {
       {/* Conflicts List */}
       <div className="space-y-6">
         {conflicts.length === 0 && !loading ? (
-          <div className="google-card-light p-12 text-center space-y-3">
-            <CheckCircle2 className="w-12 h-12 text-[#137333] mx-auto" />
-            <h3 className="text-base font-bold text-[#202124]">No Open Continuity Conflicts</h3>
+          <div className="gc-card p-12 text-center space-y-3">
+            <CheckCircle2 className="w-12 h-12 text-[#188038] mx-auto" />
+            <h3 className="text-base font-semibold text-[#202124]">No Open Continuity Conflicts</h3>
             <p className="text-xs text-[#5f6368]">
-              All production scenes are 100% consistent according to ClickHouse state memory.
+              All analyzed production evidence is currently consistent.
             </p>
           </div>
         ) : (
@@ -121,238 +135,204 @@ export default function Conflicts() {
             return (
               <div
                 key={conf.conflict_id}
-                className="google-card-light p-6 border-rose-300 space-y-6 relative overflow-hidden"
+                className="gc-card p-6 border-[#fad2cf] space-y-6"
               >
                 {/* Conflict Top Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#dadce0] pb-4">
                   <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf] tracking-wider uppercase">
-                      {conf.severity || 'HIGH'} SEVERITY CONFLICT
+                    <span className="gc-chip-red uppercase tracking-wider">
+                      {conf.severity || 'HIGH'} SEVERITY
                     </span>
-                    <span className="text-xs font-mono text-[#202124] font-bold">
-                      Scene {conf.scene_id} / Take {conf.take_id || '03'}
+                    <span className="text-xs font-bold text-[#202124]">
+                      Scene {conf.scene_id} · Take {conf.take_id || '03'}
                     </span>
                     <span className="text-xs font-mono text-[#5f6368]">
-                      Conflict ID: {conf.conflict_id.slice(0, 8)}...
+                      ID: {conf.conflict_id.slice(0, 8)}...
                     </span>
                   </div>
                   <span className="text-xs text-[#5f6368] font-mono">
-                    Status: <strong className="text-[#b06000] font-bold">{conf.status}</strong>
+                    Status: <strong className="text-[#b06000] font-semibold">{conf.status}</strong>
                   </span>
                 </div>
 
-                {/* 🔥 UPGRADE 1: WHY IS THIS A CONFLICT? — EVIDENCE CHAIN CARD */}
+                {/* Side-by-Side Comparison Cards */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-[#202124] uppercase tracking-wider flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-[#202124] uppercase tracking-wider flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#1a73e8]" />
-                    EVIDENCE PROVENANCE CHAIN (ANTI-HALLUCINATION AUDIT TRAIL)
+                    Evidence Provenance Comparison
                   </h4>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                    {/* Expected Fact Card */}
-                    <div className="p-4 rounded-xl bg-[#e6f4ea]/60 border border-[#ceead6] space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold text-[#137333] uppercase">
-                        <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> EXPECTED STATE</span>
-                        <span>ClickHouse Fact #104</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                    {/* Expected Card */}
+                    <div className="p-4 rounded-md bg-[#e6f4ea]/40 border border-[#ceead6] space-y-2">
+                      <div className="flex justify-between text-[10px] font-semibold text-[#188038] uppercase">
+                        <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> EXPECTED</span>
+                        <span>Scene 17 Screenplay Baseline</span>
                       </div>
-                      <div className="text-base font-extrabold text-[#137333]">
+                      <div className="text-base font-extrabold text-[#188038]">
                         {conf.attribute_name} = {conf.expected_value}
                       </div>
                       <div className="text-[11px] text-[#5f6368] font-sans">
                         Established in <strong>Scene 17 Screenplay</strong> (Page 4, Line 12).
                       </div>
-                      <div className="text-[10px] text-[#137333] font-bold pt-1 border-t border-[#ceead6]">
-                        Confidence: 98% • Verified Baseline
+                      <div className="text-[10px] text-[#188038] font-semibold pt-1 border-t border-[#ceead6]">
+                        98% Confidence · Baseline Fact
                       </div>
                     </div>
 
-                    {/* Observed Footage Card */}
-                    <div className="p-4 rounded-xl bg-[#fce8e6]/60 border border-[#fad2cf] space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold text-[#c5221f] uppercase">
-                        <span className="flex items-center gap-1"><Video className="w-3.5 h-3.5" /> OBSERVED FOOTAGE</span>
+                    {/* Observed Card */}
+                    <div className="p-4 rounded-md bg-[#fce8e6]/40 border border-[#fad2cf] space-y-2">
+                      <div className="flex justify-between text-[10px] font-semibold text-[#d93025] uppercase">
+                        <span className="flex items-center gap-1"><Video className="w-3.5 h-3.5" /> OBSERVED</span>
                         <span>Scene 25 / Take 3</span>
                       </div>
-                      <div className="text-base font-extrabold text-[#c5221f]">
+                      <div className="text-base font-extrabold text-[#d93025]">
                         {conf.attribute_name} = {conf.observed_value}
                       </div>
                       <div className="text-[11px] text-[#5f6368] font-sans">
                         Extracted at timestamp <strong>00:12.8</strong> via Gemini 2.0 Vision.
                       </div>
-                      <div className="text-[10px] text-[#c5221f] font-bold pt-1 border-t border-[#fad2cf]">
-                        Confidence: {(conf.confidence * 100).toFixed(0)}% • Visual Bounding Box #4
-                      </div>
-                    </div>
-
-                    {/* Historical Consistency Record */}
-                    <div className="p-4 rounded-xl bg-[#e8f0fe]/60 border border-[#d2e3fc] space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold text-[#1a73e8] uppercase">
-                        <span>HISTORICAL CONSISTENCY</span>
-                        <span>Scene 21</span>
-                      </div>
-                      <div className="text-base font-extrabold text-[#1a73e8]">
-                        Confirmed {conf.expected_value}
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] font-sans">
-                        Scene 21 Take 1 footage confirmed {conf.expected_value}.
-                      </div>
-                      <div className="text-[10px] text-[#1a73e8] font-bold pt-1 border-t border-[#d2e3fc]">
-                        Provenance Verdict: Deterministic Mismatch
+                      <div className="text-[10px] text-[#d93025] font-semibold pt-1 border-t border-[#fad2cf]">
+                        {(conf.confidence * 100).toFixed(0)}% Confidence · Visual Bounding Box
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* 🔥 UPGRADE 2: WHAT BREAKS IF WE IGNORE THIS? — BLAST RADIUS 2.0 */}
-                <div className="p-5 rounded-xl bg-[#fef7e0]/60 border border-[#feefc3] space-y-3">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#b06000] uppercase tracking-wider">
+                {/* Blast Radius Section */}
+                <div className="p-4 rounded-md bg-[#fef7e0]/60 border border-[#feefc3] space-y-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#b06000] uppercase">
                     <span className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
-                      BLAST RADIUS 2.0 — CASCADING DOWNSTREAM IMPACT ANALYSIS
+                      Downstream Impact (Scenes Depended on State)
                     </span>
-                    <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-[#feefc3]">
-                      ClickHouse Graph Query
-                    </span>
+                    <span className="gc-chip-amber">ClickHouse Graph Engine</span>
                   </div>
 
                   <p className="text-xs text-[#202124] font-sans">
-                    If Take 3 is approved with <code className="text-[#c5221f] font-bold">{conf.observed_value}</code> without correction, <strong className="text-[#202124]">{affectedScenes.length} future screenplay scenes</strong> will suffer state breakage:
+                    If Take 3 is approved with <code className="text-[#d93025] font-bold">{conf.observed_value}</code>, <strong className="text-[#202124]">{affectedScenes.length} future scenes</strong> will break:
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
-                    <div className="p-3 rounded-lg bg-white border border-[#feefc3] space-y-1">
-                      <div className="flex justify-between items-center text-[#b06000] font-bold">
+                    <div className="p-3 rounded bg-white border border-[#feefc3] space-y-1">
+                      <div className="flex justify-between text-[#b06000] font-semibold">
                         <span>SCENE 26</span>
-                        <span className="text-[9px] bg-[#fef7e0] px-1.5 py-0.2 rounded border border-[#feefc3]">AFFECTED</span>
+                        <span className="gc-chip-amber">AFFECTED</span>
                       </div>
-                      <div className="text-[11px] text-[#202124] font-sans">INT. POLICE CAR — DAY</div>
-                      <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0]">
-                        <strong>Why:</strong> Dialogue explicitly references bandage on {conf.expected_value}.
-                      </div>
+                      <div className="text-[11px] text-[#5f6368] font-sans">INT. POLICE CAR — Dialogue assumes left_arm bandage.</div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-white border border-[#feefc3] space-y-1">
-                      <div className="flex justify-between items-center text-[#b06000] font-bold">
+                    <div className="p-3 rounded bg-white border border-[#feefc3] space-y-1">
+                      <div className="flex justify-between text-[#b06000] font-semibold">
                         <span>SCENE 28</span>
-                        <span className="text-[9px] bg-[#fef7e0] px-1.5 py-0.2 rounded border border-[#feefc3]">AFFECTED</span>
+                        <span className="gc-chip-amber">AFFECTED</span>
                       </div>
-                      <div className="text-[11px] text-[#202124] font-sans">EXT. ALLEYWAY — NIGHT</div>
-                      <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0]">
-                        <strong>Why:</strong> Fight scene choreography assumes {conf.expected_value} mobility restriction.
-                      </div>
+                      <div className="text-[11px] text-[#5f6368] font-sans">EXT. ALLEYWAY — Fight choreography restriction.</div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-white border border-rose-300 space-y-1">
-                      <div className="flex justify-between items-center text-[#c5221f] font-bold">
+                    <div className="p-3 rounded bg-white border border-[#fad2cf] space-y-1">
+                      <div className="flex justify-between text-[#d93025] font-semibold">
                         <span>SCENE 31</span>
-                        <span className="text-[9px] bg-[#fce8e6] px-1.5 py-0.2 rounded border border-[#fad2cf]">CRITICAL BREAK</span>
+                        <span className="gc-chip-red">CRITICAL BREAK</span>
                       </div>
-                      <div className="text-[11px] text-[#202124] font-sans">INT. HOSPITAL ROOM — DAY</div>
-                      <div className="text-[10px] text-[#5f6368] pt-1 border-t border-[#dadce0]">
-                        <strong>Why:</strong> Doctor examines cast on {conf.expected_value} (Screenplay Page 8).
-                      </div>
+                      <div className="text-[11px] text-[#5f6368] font-sans">INT. HOSPITAL — Doctor examines cast on left_arm.</div>
                     </div>
                   </div>
                 </div>
 
-                {/* 🔥 UPGRADE 3: WHAT SHOULD THE DIRECTOR DO? — ACTION PLANNER MATRIX */}
+                {/* AI Recommendation & Action Planner */}
                 <div className="space-y-4 pt-2 border-t border-[#dadce0]">
-                  <h4 className="text-xs font-bold text-[#202124] uppercase tracking-wider flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-[#202124] uppercase tracking-wider flex items-center gap-2">
                     <CheckSquare className="w-4 h-4 text-[#1a73e8]" />
-                    ACTION PLANNER — DIRECTOR RESOLUTION OPTIONS
+                    Recommended Actions
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                    {/* Option A */}
                     <div
                       onClick={() => setSelectedAction('OPTION_A')}
-                      className={`p-4 rounded-xl border cursor-pointer transition ${
+                      className={`p-4 rounded-md border cursor-pointer transition ${
                         selectedAction === 'OPTION_A'
-                          ? 'bg-[#e6f4ea] border-[#137333] shadow-md'
+                          ? 'bg-[#e6f4ea] border-[#188038]'
                           : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-extrabold text-sm text-[#137333]">OPTION A: RESHOOT TAKE 3</span>
-                        <span className="text-[10px] bg-[#137333] text-white px-2 py-0.5 rounded font-bold">RECOMMENDED</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-[#188038]">OPTION A: RESHOOT TAKE 3</span>
+                        <span className="gc-chip-green">RECOMMENDED</span>
                       </div>
-                      <div className="text-xl font-extrabold text-[#202124] font-mono">$1,500</div>
+                      <div className="text-lg font-bold text-[#202124] font-mono">$1,500</div>
                       <p className="text-xs text-[#5f6368] font-sans mt-1">
-                        Immediate reshoot on set today. Zero downstream script modification required.
+                        Immediate reshoot on set today. Zero downstream script modification.
                       </p>
                     </div>
 
-                    {/* Option B */}
                     <div
                       onClick={() => setSelectedAction('OPTION_B')}
-                      className={`p-4 rounded-xl border cursor-pointer transition ${
+                      className={`p-4 rounded-md border cursor-pointer transition ${
                         selectedAction === 'OPTION_B'
-                          ? 'bg-[#fef7e0] border-[#b06000] shadow-md'
+                          ? 'bg-[#fef7e0] border-[#b06000]'
                           : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-extrabold text-sm text-[#b06000]">OPTION B: ACCEPT EXCEPTION</span>
-                        <span className="text-[10px] bg-[#fef7e0] text-[#b06000] px-2 py-0.5 rounded border border-[#feefc3]">SCRIPT MOD</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-[#b06000]">OPTION B: ACCEPT EXCEPTION</span>
+                        <span className="gc-chip-amber">SCRIPT MOD</span>
                       </div>
-                      <div className="text-xl font-extrabold text-[#b06000] font-mono">$0 Today</div>
+                      <div className="text-lg font-bold text-[#b06000] font-mono">$0 Today</div>
                       <p className="text-xs text-[#5f6368] font-sans mt-1">
-                        Accept Take 3 as new reality. Requires modifying screenplay state for Scenes 26, 28, 31.
+                        Accept Take 3. Requires modifying screenplay state for Scenes 26, 28, 31.
                       </p>
                     </div>
 
-                    {/* Option C */}
                     <div
                       onClick={() => setSelectedAction('OPTION_C')}
-                      className={`p-4 rounded-xl border cursor-pointer transition ${
+                      className={`p-4 rounded-md border cursor-pointer transition ${
                         selectedAction === 'OPTION_C'
-                          ? 'bg-[#fce8e6] border-[#c5221f] shadow-md'
+                          ? 'bg-[#fce8e6] border-[#d93025]'
                           : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-extrabold text-sm text-[#c5221f]">OPTION C: DIGITAL VFX PATCH</span>
-                        <span className="text-[10px] bg-[#fce8e6] text-[#c5221f] px-2 py-0.5 rounded border border-[#fad2cf]">HIGH COST</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-[#d93025]">OPTION C: DIGITAL VFX PATCH</span>
+                        <span className="gc-chip-red">HIGH COST</span>
                       </div>
-                      <div className="text-xl font-extrabold text-[#c5221f] font-mono">$45,000</div>
+                      <div className="text-lg font-bold text-[#d93025] font-mono">$45,000</div>
                       <p className="text-xs text-[#5f6368] font-sans mt-1">
                         Paint out bandage digitally in post-production. Adds 3 weeks to release schedule.
                       </p>
                     </div>
                   </div>
 
-                  {/* Director Notes & Execution Buttons */}
-                  <div className="p-4 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-3 font-sans">
-                    <label className="block text-xs font-bold text-[#5f6368] uppercase">
-                      Director Governance Notes (Written to ClickHouse Audit Log):
+                  {/* Director Notes & Actions */}
+                  <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-3 font-sans">
+                    <label className="block text-xs font-semibold text-[#5f6368] uppercase">
+                      Director Governance Notes (Audit Logged):
                     </label>
                     <input
                       type="text"
                       placeholder="e.g. Approved reshoot while actor and lighting rig are still in Int. Interrogation Room set."
                       value={directorNotes}
                       onChange={(e) => setDirectorNotes(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#dadce0] text-xs text-[#202124]"
+                      className="w-full px-3 py-2 rounded bg-white border border-[#dadce0] text-xs text-[#202124] outline-none focus:border-[#1a73e8]"
                     />
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                      <div className="text-xs text-[#5f6368] flex items-center gap-1.5 font-mono">
-                        <Info className="w-3.5 h-3.5 text-[#1a73e8]" />
+                      <div className="text-xs text-[#5f6368] font-mono">
                         Selected Action: <strong className="text-[#1a73e8]">{selectedAction}</strong>
                       </div>
 
                       <div className="flex items-center gap-3 w-full sm:w-auto">
                         <button
                           onClick={() => handleActionExecution(conf.conflict_id, 'REJECT')}
-                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-white hover:bg-[#f8f9fa] text-[#5f6368] font-bold text-xs border border-[#dadce0] flex items-center justify-center gap-1.5 transition"
+                          className="gc-btn-danger cursor-pointer"
                         >
-                          <X className="w-4 h-4 text-[#5f6368]" />
                           Reject Conflict
                         </button>
                         <button
                           onClick={() => handleActionExecution(conf.conflict_id, selectedAction === 'OPTION_A' ? 'APPROVE_RESHOOT' : selectedAction === 'OPTION_B' ? 'ACCEPT_EXCEPTION' : 'DIGITAL_VFX_PATCH')}
-                          className="google-btn-blue flex-1 sm:flex-none px-6 py-2.5 text-xs tracking-wide flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          className="gc-btn-primary cursor-pointer"
                         >
-                          <Check className="w-4 h-4 stroke-[3]" />
-                          Execute & Log Action in ClickHouse
+                          Approve Action & Log in ClickHouse
                         </button>
                       </div>
                     </div>
