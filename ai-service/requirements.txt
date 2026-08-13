@@ -19,7 +19,6 @@ google-cloud-secret-manager>=2.20.0
 
 # ── ClickHouse (Official Python Client + MCP Server) ─────────
 clickhouse-connect>=0.7.19
-mcp-clickhouse>=0.3.0
 
 # ── Document / Media Processing ───────────────────────────────
 pypdf>=4.3.1
@@ -41,4 +40,3 @@ tenacity>=8.4.2
 pytest>=8.2.2
 pytest-asyncio>=0.23.7
 pytest-mock>=3.14.0
-mcp

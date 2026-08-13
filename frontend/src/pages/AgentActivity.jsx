@@ -102,6 +102,7 @@ export default function AgentActivity() {
                     <span>Duration: <strong className="text-[#202124]">{node.duration}</strong></span>
                     <ChevronRight className="w-4 h-4 text-[#5f6368]" />
                   </div>
+                </div>
                 ))
               )}
             </div>

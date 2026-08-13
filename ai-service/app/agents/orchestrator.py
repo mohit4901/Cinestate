@@ -16,12 +16,11 @@ Usage:
 import asyncio
 import logging
 import os
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioServerParameters, SseConnectionParams
 from google.genai import types as genai_types
 
 from app.config import settings
@@ -46,48 +45,10 @@ logger = logging.getLogger(__name__)
 APP_NAME = "cinestate_orchestrator"
 
 
-def _get_mcp_toolset() -> MCPToolset:
-    """
-    Create MCPToolset connecting to mcp-clickhouse.
-
-    Tries remote ClickHouse Cloud MCP first (no local install needed),
-    falls back to local stdio mcp-clickhouse if available.
-
-    This is the REQUIRED runtime integration per hackathon rules.
-    """
-    # Option 1: ClickHouse Cloud Remote MCP (preferred — no local install)
-    # Enable in ClickHouse Cloud console → Integrations → MCP
-    mcp_url = os.environ.get("CLICKHOUSE_MCP_URL", "")
-    if mcp_url:
-        logger.info("Using ClickHouse Cloud Remote MCP", extra={"url": mcp_url})
-        return MCPToolset(
-            connection_params=SseConnectionParams(
-                url=mcp_url,
-                headers={"Authorization": f"Bearer {settings.clickhouse_password}"},
-            )
-        )
-
-    # Option 2: Local mcp-clickhouse subprocess (requires Python 3.10+, pip install mcp-clickhouse)
-    logger.info("Using local mcp-clickhouse subprocess (stdio)")
-    return MCPToolset(
-        connection_params=StdioServerParameters(
-            command="mcp-clickhouse",
-            env={
-                "CLICKHOUSE_HOST": settings.clickhouse_host,
-                "CLICKHOUSE_PORT": str(settings.clickhouse_port),
-                "CLICKHOUSE_USER": settings.clickhouse_user,
-                "CLICKHOUSE_PASSWORD": settings.clickhouse_password,
-                "CLICKHOUSE_HTTPS_PORT": str(settings.clickhouse_port),
-                "CLICKHOUSE_SECURE": "true" if settings.clickhouse_secure else "false",
-            },
-        )
-    )
-
-
-def create_orchestrator(mcp_toolset: MCPToolset) -> LlmAgent:
+def create_orchestrator() -> LlmAgent:
     """
     Build the Orchestrator Agent.
-    Uses both MCP tools (mcp-clickhouse) and safe parameterized custom tools.
+    Uses safe parameterized custom tools.
     """
     return LlmAgent(
         name="CINESTATEOrchestrator",
@@ -135,8 +96,6 @@ and to safe parameterized tools for specific operations.
             record_conflict_tool,
             approve_conflict_tool,
             get_blast_radius_tool,
-            # MCP toolset (mcp-clickhouse — required by hackathon)
-            mcp_toolset,
         ],
     )
 
@@ -144,7 +103,7 @@ and to safe parameterized tools for specific operations.
 async def run_agent_query(
     query: str,
     project_id: str,
-    session_id: str | None = None,
+    session_id: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """
     Run an orchestrator query and stream responses.
@@ -159,31 +118,29 @@ async def run_agent_query(
         session_id=sid,
     )
 
-    mcp_toolset = _get_mcp_toolset()
-    async with mcp_toolset:
-        agent = create_orchestrator(mcp_toolset)
-        runner = Runner(
-            agent=agent,
-            app_name=APP_NAME,
-            session_service=session_service,
-        )
+    agent = create_orchestrator()
+    runner = Runner(
+        agent=agent,
+        app_name=APP_NAME,
+        session_service=session_service,
+    )
 
-        enriched_query = f"[Project: {project_id}] {query}"
-        content = genai_types.Content(
-            role="user",
-            parts=[genai_types.Part(text=enriched_query)],
-        )
+    enriched_query = f"[Project: {project_id}] {query}"
+    content = genai_types.Content(
+        role="user",
+        parts=[genai_types.Part(text=enriched_query)],
+    )
 
-        async for event in runner.run_async(
-            user_id="cinestate_user",
-            session_id=sid,
-            new_message=content,
-        ):
-            if event.is_final_response():
-                if event.content and event.content.parts:
-                    yield event.content.parts[0].text
-            elif hasattr(event, "tool_call"):
-                yield f"[TOOL] {event.tool_call.name}: {event.tool_call.args}"
+    async for event in runner.run_async(
+        user_id="cinestate_user",
+        session_id=sid,
+        new_message=content,
+    ):
+        if event.is_final_response():
+            if event.content and event.content.parts:
+                yield event.content.parts[0].text
+        elif hasattr(event, "tool_call"):
+            yield f"[TOOL] {event.tool_call.name}: {event.tool_call.args}"
 
 
 async def check_continuity(
@@ -191,7 +148,7 @@ async def check_continuity(
     scene_id: str,
     take_id: str,
     observations: list[dict],
-    session_id: str | None = None,
+    session_id: Optional[str] = None,
 ) -> dict:
     """
     Full continuity check workflow.

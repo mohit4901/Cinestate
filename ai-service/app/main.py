@@ -12,14 +12,12 @@ import json
 import sys
 from contextlib import asynccontextmanager, AsyncExitStack
 from typing import Optional
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from google import genai
 from google.genai import types
-
-from mcp.client.stdio import stdio_client, StdioServerParameters
-from mcp import ClientSession
 
 from app.config import settings
 from app.integrations.clickhouse.client import ping as clickhouse_ping, get_client
@@ -47,35 +45,15 @@ script_agent = ScriptAgent()
 recommendation_agent = RecommendationAgent()
 
 
-mcp_exit_stack = None
-mcp_session = None
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global mcp_exit_stack, mcp_session
     logger.info("Initializing CINESTATE AI Service")
     ch_ok = clickhouse_ping()
     logger.info(f"ClickHouse Cloud connection status: {'HEALTHY' if ch_ok else 'UNHEALTHY'}")
     
-    # Initialize Official ClickHouse MCP Server
-    mcp_exit_stack = AsyncExitStack()
-    server_params = StdioServerParameters(
-        command=sys.executable,
-        args=["-m", "app.agents.mcp_server"], 
-        env=None
-    )
-    stdio_transport = await mcp_exit_stack.enter_async_context(stdio_client(server_params))
-    read, write = stdio_transport[0], stdio_transport[1]
-    mcp_session = await mcp_exit_stack.enter_async_context(ClientSession(read, write))
-    await mcp_session.initialize()
-    logger.info("✅ ClickHouse MCP Server Connected via stdio")
-    
     yield
     
     logger.info("Shutting down CINESTATE AI Service")
-    if mcp_exit_stack:
-        await mcp_exit_stack.aclose()
-
 
 app = FastAPI(
     title="CINESTATE AI Service",
@@ -199,37 +177,14 @@ async def analyze_live_frame(
         # 5. True Agentic Tool Calling Loop
         conflict_data_list = []
         if conflicts:
-            get_deps_decl = types.FunctionDeclaration(
-                name="get_downstream_dependencies",
-                description="Returns downstream scenes affected by a continuity conflict.",
-                parameters=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={"project_id": types.Schema(type=types.Type.STRING), "scene_id": types.Schema(type=types.Type.STRING)},
-                    required=["project_id", "scene_id"]
-                )
-            )
-            mcp_tool = types.Tool(function_declarations=[get_deps_decl])
+            pass # Removed MCP Tool setup
 
         for conf in conflicts:
-            # AGENT LOOP
-            # Step 1: Prompt Agent with tools
-            agent_prompt = f"Conflict in {scene_id} for {conf.attribute_name}. Expected: {conf.expected_value}, Observed: {conf.observed_value}. Call get_downstream_dependencies tool."
+            # Step 1: Execute Direct Tool Call (Removed MCP loop for py3.9 compat)
             try:
-                response = agent_client.models.generate_content(
-                    model=settings.gemini_model,
-                    contents=agent_prompt,
-                    config=types.GenerateContentConfig(tools=[mcp_tool], temperature=0.1)
-                )
-                logger.info(f"Agentic reasoning complete. Tool Calls: {len(response.function_calls) if response.function_calls else 0}")
+                deps_result = repo.get_downstream_dependencies(project_id, scene_id)
             except Exception as e:
-                logger.error(f"Agent loop error: {e}")
-
-            # Step 2: Execute MCP Tool on behalf of Agent
-            try:
-                mcp_resp = await mcp_session.call_tool("get_downstream_dependencies", arguments={"project_id": project_id, "scene_id": scene_id})
-                deps_result = json.loads(mcp_resp.content[0].text)
-            except Exception as e:
-                logger.error(f"MCP Tool error: {e}")
+                logger.error(f"Tool error: {e}")
                 deps_result = []
 
             affected_scenes = list({d.get("affected_scene", "") for d in deps_result}) if deps_result else []
@@ -250,23 +205,22 @@ async def analyze_live_frame(
             )
 
             try:
-                mcp_insert = await mcp_session.call_tool("insert_conflict", arguments={
-                    "project_id": project_id,
-                    "scene_id": scene_id,
-                    "take_id": "live_take",
-                    "entity_type": EntityType.CHARACTER.value,
-                    "entity_id": entity_id,
-                    "attribute_name": conf.attribute_name,
-                    "expected_value": conf.expected_value,
-                    "observed_value": conf.observed_value,
-                    "confidence": conf.confidence,
-                    "severity": conf.severity.value,
-                    "recommendation": json.dumps({"action": rec.action, "reasoning": rec.reasoning}),
-                })
-                conflict_id = json.loads(mcp_insert.content[0].text)["conflict_id"]
+                conflict_id = repo.insert_conflict(
+                    project_id=project_id,
+                    scene_id=scene_id,
+                    take_id="live_take",
+                    entity_type=EntityType.CHARACTER.value,
+                    entity_id=entity_id,
+                    attribute_name=conf.attribute_name,
+                    expected_value=conf.expected_value,
+                    observed_value=conf.observed_value,
+                    confidence=conf.confidence,
+                    severity=conf.severity.value,
+                    recommendation=json.dumps({"action": rec.action, "reasoning": rec.reasoning}),
+                )
             except Exception as e:
-                logger.error(f"MCP Tool insert error: {e}")
-                conflict_id = "mcp_fallback_id"
+                logger.error(f"Tool insert error: {e}")
+                conflict_id = "fallback_id"
 
             conflict_data_list.append({
                 "conflict_id": conflict_id,
