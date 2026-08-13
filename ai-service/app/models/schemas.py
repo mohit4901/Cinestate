@@ -11,7 +11,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-# ── Enums ────────────────────────────────────────────────────
+# Enums
 
 class EventType(str, Enum):
     SCRIPT_FACT           = "SCRIPT_FACT"
@@ -39,6 +39,7 @@ class EntityType(str, Enum):
     COSTUME   = "COSTUME"
     LOCATION  = "LOCATION"
     SCENE     = "SCENE"
+    ACCESSORY = "ACCESSORY"
 
 
 class Severity(str, Enum):
@@ -54,7 +55,7 @@ class ConflictStatus(str, Enum):
     RESOLVED = "RESOLVED"
 
 
-# ── Production Event ─────────────────────────────────────────
+# Production Event
 
 class ProductionEvent(BaseModel):
     project_id:       str
@@ -75,7 +76,7 @@ class ProductionEvent(BaseModel):
     metadata:         Optional[dict[str, Any]] = None
 
 
-# ── Gemini Observation ────────────────────────────────────────
+# Gemini Observation
 
 class VisualObservation(BaseModel):
     """Single observation extracted by Gemini from video/image."""
@@ -97,7 +98,7 @@ class VideoAnalysisResult(BaseModel):
     processing_ms:  Optional[int] = None
 
 
-# ── State ────────────────────────────────────────────────────
+# State
 
 class StateSnapshot(BaseModel):
     project_id:       str
@@ -120,7 +121,7 @@ class ProductionState(BaseModel):
     attributes:  dict[str, dict]   # attr → {value, confidence, scene, source}
 
 
-# ── Conflict ─────────────────────────────────────────────────
+# Conflict
 
 class ContinuityConflict(BaseModel):
     project_id:     str
@@ -148,7 +149,7 @@ class ConflictResult(BaseModel):
     reason:          str
 
 
-# ── Blast Radius ─────────────────────────────────────────────
+# Blast Radius
 
 class BlastRadius(BaseModel):
     conflict_scene:   str
@@ -158,7 +159,7 @@ class BlastRadius(BaseModel):
     explanation:      str
 
 
-# ── Recommendation ────────────────────────────────────────────
+# Recommendation
 
 class RecommendationResult(BaseModel):
     action:       str    # e.g. "RESHOOT_TAKE", "ACCEPT_EXCEPTION", "FLAG_EDITOR"
@@ -167,7 +168,7 @@ class RecommendationResult(BaseModel):
     requires_approval: bool = True
 
 
-# ── Scene Dependency ──────────────────────────────────────────
+# Scene Dependency
 
 class SceneDependency(BaseModel):
     project_id:      str
@@ -178,7 +179,7 @@ class SceneDependency(BaseModel):
     dependency_type: str = "STATE"
 
 
-# ── Agent Audit ───────────────────────────────────────────────
+# Agent Audit
 
 class AgentAuditEntry(BaseModel):
     project_id:     str
@@ -193,7 +194,7 @@ class AgentAuditEntry(BaseModel):
     approval_status: Optional[str] = "N/A"
 
 
-# ── Script Extraction ─────────────────────────────────────────
+# Script Extraction
 
 class SceneCharacterState(BaseModel):
     character:   str
@@ -225,7 +226,7 @@ class ScriptAnalysisResult(BaseModel):
     continuity_dependencies: int
 
 
-# ── API Request/Response ─────────────────────────────────────
+# API Request/Response
 
 class AnalyzeScriptRequest(BaseModel):
     project_id:    str

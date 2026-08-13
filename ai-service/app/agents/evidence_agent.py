@@ -86,6 +86,7 @@ Return a JSON array of objects. Example:
 [
   {
     "entity_type": "CHARACTER",
+    "entity_id": "ActorNameOrCharacterName",
     "attribute_name": "clothing_style",
     "value": "t_shirt",
     "confidence": 0.96,
@@ -94,6 +95,7 @@ Return a JSON array of objects. Example:
   },
   {
     "entity_type": "PROP",
+    "entity_id": "cell_phone",
     "attribute_name": "prop",
     "value": "cell_phone",
     "confidence": 0.98,

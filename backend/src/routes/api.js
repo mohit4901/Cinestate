@@ -83,7 +83,7 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
         SELECT *
         FROM cinestate.continuity_conflicts
         WHERE project_id = {projectId:String}
-        ORDER BY created_at DESC
+        ORDER BY scene_id DESC
       `,
       query_params: { projectId },
       format: 'JSONEachRow',
@@ -149,7 +149,7 @@ router.get('/projects/:projectId/character-history', async (req, res) => {
         WHERE project_id = {projectId:String}
           AND entity_id = {character:String}
           AND attribute_name = {attribute:String}
-        ORDER BY created_at ASC
+        ORDER BY scene_id ASC
       `,
       query_params: { projectId, character, attribute },
       format: 'JSONEachRow',
@@ -200,7 +200,7 @@ router.get('/projects/:projectId/audit-logs', async (req, res) => {
         SELECT *
         FROM cinestate.agent_audit_log
         WHERE project_id = {projectId:String}
-        ORDER BY created_at DESC
+        ORDER BY scene_id DESC
         LIMIT 50
       `,
       query_params: { projectId },
@@ -244,7 +244,7 @@ router.get('/projects/:projectId/search', async (req, res) => {
     }
 
     const rs = await chClient.query({
-      query: `SELECT * FROM cinestate.production_events ${whereClause} ORDER BY created_at DESC LIMIT 50`,
+      query: `SELECT * FROM cinestate.production_events ${whereClause} ORDER BY scene_id DESC LIMIT 50`,
       query_params,
       format: 'JSONEachRow',
     });
@@ -252,14 +252,7 @@ router.get('/projects/:projectId/search', async (req, res) => {
     res.json({ success: true, count: events.length, events });
   } catch (err) {
     console.error('Search query error:', err.message);
-    res.json({
-      success: true,
-      count: 2,
-      events: [
-        { scene_id: 'scene_17', event_type: 'STATE_SNAPSHOT', entity_id: 'arjun', attribute_name: 'injury_location', observed_value: 'left_arm', created_at: '2026-08-11 10:00:00' },
-        { scene_id: 'scene_25', event_type: 'VIDEO_OBSERVATION', entity_id: 'arjun', attribute_name: 'injury_location', observed_value: 'right_arm', created_at: '2026-08-11 12:30:00' },
-      ],
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -267,8 +260,13 @@ router.get('/projects/:projectId/search', async (req, res) => {
 router.post('/analyze-live-frame', upload.single('file'), async (req, res) => {
   try {
     const formData = new FormData();
-    formData.append('project_id', req.body.project_id || 'project-aurora');
+    formData.append('project_id', req.body.project_id);
     formData.append('scene_id', req.body.scene_id || 'scene_25');
+    if (req.body.entity_id) {
+        formData.append('entity_id', req.body.entity_id);
+    } else {
+        formData.append('entity_id', 'unknown_entity');
+    }
     if (req.file) {
       formData.append('file', req.file.buffer, {
         filename: 'live_frame.jpg',
@@ -282,26 +280,7 @@ router.post('/analyze-live-frame', upload.single('file'), async (req, res) => {
     res.json(resp.data);
   } catch (err) {
     console.error('Analyze live frame proxy error:', err.message);
-    res.json({
-      success: true,
-      scene_id: req.body.scene_id || 'scene_25',
-      observations: [
-        { entity_id: 'arjun', attribute_name: 'injury_location', value: 'right_arm', confidence: 0.94, timestamp: 'LIVE', evidence_note: 'Gemini 2.0 Flash Vision Live Scan: Right arm detected.' }
-      ],
-      conflicts_detected: 1,
-      conflicts: [
-        {
-          conflict_id: 'conf_live_9901',
-          attribute_name: 'injury_location',
-          expected_value: 'left_arm',
-          observed_value: 'right_arm',
-          confidence: 0.94,
-          severity: 'HIGH',
-          blast_radius: { affected_scenes: ['scene_26', 'scene_28', 'scene_31'] },
-          recommendation: 'Reshoot Take 3 immediately before set lights are moved.'
-        }
-      ]
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -318,7 +297,7 @@ router.post('/analyze-take', async (req, res) => {
 router.post('/analyze-script', upload.single('file'), async (req, res) => {
   try {
     const formData = new FormData();
-    formData.append('project_id', req.body.project_id || 'project-aurora');
+    formData.append('project_id', req.body.project_id);
     if (req.file) {
       formData.append('file', req.file.buffer, {
         filename: req.file.originalname,
@@ -332,28 +311,7 @@ router.post('/analyze-script', upload.single('file'), async (req, res) => {
     res.json(resp.data);
   } catch (err) {
     console.error('Analyze script proxy error:', err.message);
-    res.json({
-      success: true,
-      message: 'Parsed screenplay baseline facts with Gemini 2.0 Flash',
-      data: {
-        total_scenes: 8,
-        characters: ['Arjun', 'Maya', 'Detective'],
-        locations: ['Int. Hotel Room', 'Int. Interrogation Room'],
-        scenes: [
-          {
-            scene_id: 'scene_17',
-            scene_number: 17,
-            location: 'INT. HOTEL ROOM - NIGHT',
-            time_of_day: 'NIGHT',
-            characters: ['Arjun'],
-            props: ['Watch'],
-            wardrobe: ['Black jacket'],
-            description: 'Arjun tends to his LEFT ARM injury.',
-            states: [{ character: 'arjun', attribute: 'injury_location', value: 'left_arm', confidence: 0.98 }],
-          },
-        ],
-      },
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

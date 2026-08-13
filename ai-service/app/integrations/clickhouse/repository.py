@@ -45,7 +45,7 @@ class ClickHouseRepository:
     The agents and tools use this — never raw SQL from LLM.
     """
 
-    # ── WRITES ──────────────────────────────────────────────────
+    # WRITES
 
     def insert_production_event(self, event: ProductionEvent) -> str:
         """Write a production event to ClickHouse."""
@@ -275,7 +275,7 @@ class ClickHouseRepository:
             parameters={"conflict_id": conflict_id, "rejected_by": rejected_by},
         )
 
-    # ── READS ───────────────────────────────────────────────────
+    # READS
 
     def get_character_history(
         self,
@@ -376,7 +376,7 @@ class ClickHouseRepository:
         query = SELECT_STATE_SNAPSHOTS
         params: dict = {"project_id": project_id, "scene_id": scene_id}
         if entity_id:
-            query += " AND entity_id = {entity_id:String}"
+            query = query.replace("ORDER BY", "AND entity_id = {entity_id:String}\n    ORDER BY")
             params["entity_id"] = entity_id
         result = client.query(query, parameters=params)
         return [dict(r) for r in result.named_results()]
@@ -424,6 +424,24 @@ class ClickHouseRepository:
         client = get_client()
         result = client.query(query, parameters=params)
         return [dict(r) for r in result.named_results()]
+
+    def get_projects(self) -> list[dict]:
+        """Fetch all projects."""
+        client = get_client()
+        query = "SELECT * FROM cinestate.projects ORDER BY updated_at DESC"
+        result = client.query(query)
+        columns = result.column_names
+        return [dict(zip(columns, row)) for row in result.result_rows]
+
+    def insert_project(self, project_id: str, name: str, description: str = "") -> None:
+        """Create a new project."""
+        client = get_client()
+        client.insert(
+            "projects",
+            [[project_id, name, description, "Day 1", "ACTIVE", "system", "{}",]],
+            column_names=["project_id", "name", "description", "production_day", "status", "created_by", "metadata"],
+        )
+        logger.info(f"Project {name} ({project_id}) created.")
 
     def get_project_stats(self, project_id: str) -> dict:
         """Dashboard stats — scenes, events, conflicts, consistency score."""

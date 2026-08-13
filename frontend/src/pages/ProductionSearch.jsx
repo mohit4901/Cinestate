@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Database, Filter, RefreshCw, Layers } from 'lucide-react';
 import { searchEvents } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function ProductionSearch() {
+  const { activeProjectId } = useProject();
   const [character, setCharacter] = useState('');
   const [scene, setScene] = useState('');
   const [eventType, setEventType] = useState('');
@@ -11,9 +13,10 @@ export default function ProductionSearch() {
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
+    if (!activeProjectId) return;
     setLoading(true);
     try {
-      const res = await searchEvents('project-aurora', character, scene, eventType);
+      const res = await searchEvents(activeProjectId, character, scene, eventType);
       setEvents(res.events || []);
     } catch (err) {
       console.error('Search error:', err);
@@ -23,8 +26,10 @@ export default function ProductionSearch() {
   };
 
   useEffect(() => {
-    handleSearch();
-  }, []);
+    if (activeProjectId) {
+      handleSearch();
+    }
+  }, [activeProjectId]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">

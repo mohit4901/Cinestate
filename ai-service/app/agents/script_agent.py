@@ -91,10 +91,10 @@ Return strict valid JSON matching this schema:
             if response.text:
                 parsed = json.loads(response.text)
                 return self._parse_json_result(project_id, parsed)
-            return self._build_aurora_script_result(project_id)
+            raise ValueError("Gemini returned empty response for script parsing.")
         except Exception as e:
-            logger.warning(f"Gemini live PDF parsing fallback: {e}")
-            return self._build_aurora_script_result(project_id)
+            logger.error(f"Gemini live PDF parsing failed: {e}")
+            raise RuntimeError(f"Script parsing failed: {e}")
 
     def analyze_script_text(self, project_id: str, script_text: str) -> ScriptAnalysisResult:
         """Extract scene breakdown, characters, props, and initial state facts from text."""
@@ -119,10 +119,10 @@ Return strict valid JSON.
             if response.text:
                 parsed = json.loads(response.text)
                 return self._parse_json_result(project_id, parsed)
-            return self._build_aurora_script_result(project_id)
+            raise ValueError("Gemini returned empty response for text script parsing.")
         except Exception as e:
-            logger.warning(f"Script parsing text fallback: {e}")
-            return self._build_aurora_script_result(project_id)
+            logger.error(f"Script parsing text failed: {e}")
+            raise RuntimeError(f"Script text parsing failed: {e}")
 
     def _parse_json_result(self, project_id: str, parsed: dict) -> ScriptAnalysisResult:
         """Map Gemini JSON payload into Pydantic ScriptAnalysisResult."""
@@ -130,20 +130,20 @@ Return strict valid JSON.
         for sc in parsed.get("scenes", []):
             states = [
                 SceneCharacterState(
-                    character=st.get("character", "arjun"),
-                    attribute=st.get("attribute", "injury_location"),
-                    value=st.get("value", "left_arm"),
+                    character=st.get("character", "unknown"),
+                    attribute=st.get("attribute", "unknown"),
+                    value=st.get("value", "unknown"),
                     confidence=float(st.get("confidence", 0.95)),
                 )
                 for st in sc.get("states", [])
             ]
             scenes.append(
                 ExtractedScene(
-                    scene_id=sc.get("scene_id", "scene_17"),
-                    scene_number=int(sc.get("scene_number", 17)),
-                    location=sc.get("location", "INT. SCENE"),
-                    time_of_day=sc.get("time_of_day", "DAY"),
-                    characters=sc.get("characters", ["Arjun"]),
+                    scene_id=sc.get("scene_id", f"scene_{sc.get('scene_number', 0)}"),
+                    scene_number=int(sc.get("scene_number", 0)),
+                    location=sc.get("location", "UNKNOWN"),
+                    time_of_day=sc.get("time_of_day", "UNKNOWN"),
+                    characters=sc.get("characters", []),
                     props=sc.get("props", []),
                     wardrobe=sc.get("wardrobe", []),
                     description=sc.get("description", ""),
@@ -154,50 +154,10 @@ Return strict valid JSON.
         return ScriptAnalysisResult(
             project_id=project_id,
             total_scenes=len(scenes),
-            characters=parsed.get("characters", ["Arjun"]),
-            locations=parsed.get("locations", ["INT. LOCATION"]),
+            characters=parsed.get("characters", []),
+            locations=parsed.get("locations", []),
             scenes=scenes,
-            continuity_dependencies=parsed.get("continuity_dependencies", len(scenes)),
-        )
-
-    def _build_aurora_script_result(self, project_id: str) -> ScriptAnalysisResult:
-        return ScriptAnalysisResult(
-            project_id=project_id,
-            total_scenes=8,
-            characters=["Arjun", "Maya", "Doctor", "Detective"],
-            locations=["Int. Research Station", "Int. Hotel Room", "Ext. Rooftop", "Int. Interrogation Room"],
-            scenes=[
-                ExtractedScene(
-                    scene_id="scene_17",
-                    scene_number=17,
-                    location="INT. HOTEL ROOM - NIGHT",
-                    time_of_day="NIGHT",
-                    characters=["Arjun"],
-                    props=["Whiskey glass", "Watch"],
-                    wardrobe=["Black jacket", "White shirt"],
-                    description="Arjun tends to his LEFT ARM injury. Watch on LEFT wrist.",
-                    states=[
-                        SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.98),
-                        SceneCharacterState(character="arjun", attribute="watch_wrist", value="left", confidence=0.96),
-                    ],
-                    depends_on=["scene_01"],
-                ),
-                ExtractedScene(
-                    scene_id="scene_25",
-                    scene_number=25,
-                    location="INT. INTERROGATION ROOM",
-                    time_of_day="DAY",
-                    characters=["Arjun", "Detective"],
-                    props=["Evidence files"],
-                    wardrobe=["Black jacket"],
-                    description="Arjun interrogated. Injury from Scene 17 must be on LEFT ARM.",
-                    states=[
-                        SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.95),
-                    ],
-                    depends_on=["scene_17"],
-                ),
-            ],
-            continuity_dependencies=6,
+            continuity_dependencies=parsed.get("continuity_dependencies", 0),
         )
 
 
@@ -231,31 +191,34 @@ Severity: {severity.value}
 Blast Radius: {affected_count} downstream scenes affected ({', '.join(blast_radius.get('affected_scenes', []))})
 
 Provide a short, authoritative, cost-aware recommendation for the Director & Script Supervisor.
-Should they: RESHOOT_TAKE, ACCEPT_EXCEPTION, or RE_FLIP_FOOTAGE_VFX?
+Return ONLY a valid JSON object with:
+"action": one of "RESHOOT_TAKE", "ACCEPT_EXCEPTION", or "DIGITAL_VFX"
+"reasoning": detailed but concise explanation of the impact and estimated cost.
 """
-
+        action = "RESHOOT_CURRENT_TAKE"
         try:
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.2,
-                    max_output_tokens=250,
+                    response_mime_type="application/json",
                 ),
             )
-            reasoning = response.text.strip() if response.text else (
-                f"RESHOOT IMMEDIATELY: Scene {conflict_scene} Take 3 has injury on '{observed}' instead of '{expected}'. "
-                f"This breaks continuity for {affected_count} future scenes ({', '.join(blast_radius.get('affected_scenes', []))}). "
-                f"Estimated cost of reshooting now: $1,500. Cost of fixing later: $45,000+."
-            )
-        except Exception:
-            reasoning = (
-                f"RESHOOT IMMEDIATELY: Scene {conflict_scene} has injury on '{observed}' instead of '{expected}'. "
-                f"{affected_count} downstream scenes affected."
-            )
+            if response.text:
+                import json
+                data = json.loads(response.text)
+                action = data.get("action", "RESHOOT_CURRENT_TAKE")
+                reasoning = data.get("reasoning", "")
+            else:
+                reasoning = f"No recommendation generated. Severity: {severity.value}."
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to generate recommendation: {e}")
+            reasoning = f"Action Required: Scene {conflict_scene} has injury on '{observed}' instead of '{expected}'. {affected_count} downstream scenes affected."
 
         return RecommendationResult(
-            action="RESHOOT_CURRENT_TAKE",
+            action=action,
             reasoning=reasoning,
             urgency=severity,
             requires_approval=True,

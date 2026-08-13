@@ -123,7 +123,7 @@ You have access to the mcp-clickhouse MCP server for direct ClickHouse queries
 and to safe parameterized tools for specific operations.
 """,
         tools=[
-            # ── Safe parameterized tools (primary) ───────────────
+            # Safe parameterized tools (primary)
             get_character_history,
             get_scene_history,
             get_take_observations,
@@ -135,7 +135,7 @@ and to safe parameterized tools for specific operations.
             record_conflict_tool,
             approve_conflict_tool,
             get_blast_radius_tool,
-            # ── MCP toolset (mcp-clickhouse — required by hackathon) ──
+            # MCP toolset (mcp-clickhouse — required by hackathon)
             mcp_toolset,
         ],
     )

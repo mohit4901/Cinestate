@@ -4,7 +4,7 @@ All SQL is here. No SQL anywhere else in the codebase.
 Parameters use {name:Type} syntax (clickhouse-connect native).
 """
 
-# ── Character History ─────────────────────────────────────────
+# Character History
 # Core query: drives State Agent and conflict detection
 SELECT_CHARACTER_HISTORY = """
     SELECT
@@ -29,7 +29,7 @@ SELECT_CHARACTER_HISTORY = """
     ORDER BY pe.scene_id ASC
 """
 
-# ── Scene History ─────────────────────────────────────────────
+# Scene History
 SELECT_SCENE_HISTORY = """
     SELECT
         event_id,
@@ -52,7 +52,7 @@ SELECT_SCENE_HISTORY = """
         AND scene_id = {scene_id:String}
 """
 
-# ── Take Observations ─────────────────────────────────────────
+# Take Observations
 SELECT_TAKE_OBSERVATIONS = """
     SELECT
         event_id,
@@ -72,7 +72,7 @@ SELECT_TAKE_OBSERVATIONS = """
         AND event_type IN ('VIDEO_OBSERVATION', 'AUDIO_OBSERVATION', 'DIALOGUE_OBSERVATION')
 """
 
-# ── Open Conflicts ────────────────────────────────────────────
+# Open Conflicts
 SELECT_OPEN_CONFLICTS = """
     SELECT
         conflict_id,
@@ -102,7 +102,7 @@ SELECT_OPEN_CONFLICTS = """
         END ASC
 """
 
-# ── Single Conflict ───────────────────────────────────────────
+# Single Conflict
 SELECT_CONFLICT_BY_ID = """
     SELECT *
     FROM continuity_conflicts
@@ -110,7 +110,7 @@ SELECT_CONFLICT_BY_ID = """
     LIMIT 1
 """
 
-# ── Downstream Dependencies (Blast Radius) ────────────────────
+# Downstream Dependencies (Blast Radius)
 SELECT_DOWNSTREAM_DEPENDENCIES = """
     SELECT
         sd.scene_id          AS affected_scene,
@@ -125,7 +125,7 @@ SELECT_DOWNSTREAM_DEPENDENCIES = """
     ORDER BY sd.scene_id ASC
 """
 
-# ── State Snapshots ───────────────────────────────────────────
+# State Snapshots
 SELECT_STATE_SNAPSHOTS = """
     SELECT
         snapshot_id,
@@ -143,7 +143,7 @@ SELECT_STATE_SNAPSHOTS = """
     ORDER BY scene_id DESC
 """
 
-# ── Project Stats (Dashboard) ─────────────────────────────────
+# Project Stats (Dashboard)
 SELECT_PROJECT_STATS = """
     SELECT
         countIf(event_type = 'SCENE_CREATED')          AS total_scenes,
@@ -162,7 +162,7 @@ SELECT_PROJECT_STATS = """
     WHERE project_id = {project_id:String}
 """
 
-# ── Agent Events (for real-time UI feed) ─────────────────────
+# Agent Events (for real-time UI feed)
 SELECT_AGENT_EVENTS = """
     SELECT
         log_id,
@@ -178,7 +178,7 @@ SELECT_AGENT_EVENTS = """
     LIMIT {limit:UInt32}
 """
 
-# ── INSERT STATEMENTS (used by repository.py) ────────────────
+# INSERT STATEMENTS (used by repository.py)
 # These are defined here for reference; actual inserts use
 # client.insert() with column_names for type safety.
 INSERT_PRODUCTION_EVENT = "-- see repository.py insert_production_event()"

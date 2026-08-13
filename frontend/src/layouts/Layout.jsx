@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useProject } from '../contexts/ProjectContext';
 import {
   LayoutDashboard,
   Film,
@@ -24,6 +25,7 @@ import {
   Info,
   CheckCircle,
   Camera,
+  FolderPlus,
 } from 'lucide-react';
 
 export default function Layout() {
@@ -31,7 +33,19 @@ export default function Layout() {
   const [showOpsGuide, setShowOpsGuide] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [newProjectForm, setNewProjectForm] = useState({ id: '', name: '', desc: '' });
+  const { projects, activeProject, switchProject, createProject } = useProject();
   const navigate = useNavigate();
+
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    if (newProjectForm.id && newProjectForm.name) {
+      await createProject(newProjectForm.id, newProjectForm.name, newProjectForm.desc);
+      setShowProjectModal(false);
+      setNewProjectForm({ id: '', name: '', desc: '' });
+    }
+  };
 
   const handleGlobalSearch = (e) => {
     e.preventDefault();
@@ -104,10 +118,32 @@ export default function Layout() {
             <div className="h-5 w-px bg-[#dadce0] mx-1" />
 
             {/* Project Selector Dropdown */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-[#f8f9fa] border border-[#dadce0] text-xs font-medium cursor-pointer transition">
-              <span className="w-2 h-2 rounded-full bg-[#188038]"></span>
-              <span className="text-[#202124] font-semibold">Project Aurora</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
+            <div className="relative group">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-[#f8f9fa] border border-[#dadce0] text-xs font-medium cursor-pointer transition">
+                <span className="w-2 h-2 rounded-full bg-[#188038]"></span>
+                <span className="text-[#202124] font-semibold">{activeProject ? activeProject.name : 'Loading...'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
+              </div>
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#dadce0] rounded-md shadow-lg hidden group-hover:block z-50">
+                <div className="py-1">
+                  {projects.map(p => (
+                    <button
+                      key={p.project_id}
+                      onClick={() => switchProject(p.project_id)}
+                      className={`block w-full text-left px-4 py-2 text-xs hover:bg-[#f1f3f4] ${activeProject?.project_id === p.project_id ? 'font-bold text-[#1a73e8]' : 'text-[#202124]'}`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                  <div className="border-t border-[#dadce0] my-1"></div>
+                  <button
+                    onClick={() => setShowProjectModal(true)}
+                    className="block w-full text-left px-4 py-2 text-xs text-[#1a73e8] font-semibold hover:bg-[#f1f3f4]"
+                  >
+                    + Create New Project
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -305,6 +341,73 @@ export default function Layout() {
                 Close Guide
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Project Modal */}
+      {showProjectModal && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full border border-[#dadce0] overflow-hidden flex flex-col max-h-full">
+            <div className="flex items-center justify-between p-4 border-b border-[#dadce0] bg-[#f8f9fa]">
+              <h2 className="text-sm font-semibold text-[#202124] uppercase tracking-wider flex items-center gap-2">
+                <FolderPlus className="w-4 h-4 text-[#1a73e8]" />
+                Create New Project
+              </h2>
+              <button
+                onClick={() => setShowProjectModal(false)}
+                className="text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed] p-1 rounded-full transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateProject} className="p-4 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#5f6368] mb-1">Project ID (e.g. project-test)</label>
+                <input 
+                  type="text" 
+                  value={newProjectForm.id}
+                  onChange={(e) => setNewProjectForm({...newProjectForm, id: e.target.value})}
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-md px-3 py-2 text-xs text-[#202124]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#5f6368] mb-1">Project Name</label>
+                <input 
+                  type="text" 
+                  value={newProjectForm.name}
+                  onChange={(e) => setNewProjectForm({...newProjectForm, name: e.target.value})}
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-md px-3 py-2 text-xs text-[#202124]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#5f6368] mb-1">Description</label>
+                <textarea 
+                  value={newProjectForm.desc}
+                  onChange={(e) => setNewProjectForm({...newProjectForm, desc: e.target.value})}
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-md px-3 py-2 text-xs text-[#202124] min-h-[80px]"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4 border-t border-[#dadce0]">
+                <button
+                  type="button"
+                  onClick={() => setShowProjectModal(false)}
+                  className="px-4 py-2 rounded-md text-xs font-semibold text-[#5f6368] hover:bg-[#f1f3f4] transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-md text-xs font-semibold bg-[#1a73e8] hover:bg-[#1557b0] text-white transition shadow-sm"
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

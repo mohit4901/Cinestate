@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Video, Upload, Play, Sparkles, CheckCircle2, AlertTriangle, Activity, Sliders, Shield, Layers, FileVideo, Check, Info } from 'lucide-react';
 import { analyzeTake } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function Footage() {
+  const { activeProjectId } = useProject();
   const [sceneId, setSceneId] = useState('scene_25');
+  const [entityId, setEntityId] = useState('arjun');
   const [takeId, setTakeId] = useState('take_03');
   const [selectedFile, setSelectedFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -26,8 +29,9 @@ export default function Footage() {
 
     try {
       const res = await analyzeTake({
-        project_id: 'project-aurora',
+        project_id: activeProjectId,
         scene_id: sceneId,
+        entity_id: entityId,
         take_id: takeId,
         file_path: selectedFile ? selectedFile.name : './uploads/scene_25_take3.mp4',
       });
@@ -75,26 +79,33 @@ export default function Footage() {
 
           <form onSubmit={handleAnalyze} className="space-y-4 text-xs font-sans">
             <div>
-              <label className="block text-[#5f6368] font-medium mb-1">Scene ID</label>
+              <label className="block text-xs font-semibold text-[#5f6368] mb-1.5 uppercase">Take ID</label>
+              <input
+                type="text"
+                value={takeId}
+                onChange={(e) => setTakeId(e.target.value)}
+                className="w-full bg-white border border-[#dadce0] rounded-md px-3 py-2 text-sm text-[#202124] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition"
+                placeholder="e.g. take_03"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#5f6368] mb-1.5 uppercase">Character / Entity Name</label>
+              <input
+                type="text"
+                value={entityId}
+                onChange={(e) => setEntityId(e.target.value)}
+                className="w-full bg-white border border-[#dadce0] rounded-md px-3 py-2 text-sm text-[#202124] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition"
+                placeholder="e.g. arjun or detective"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#5f6368] mb-1.5 uppercase">Scene ID</label>
               <input
                 type="text"
                 value={sceneId}
                 onChange={(e) => setSceneId(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#202124]"
+                className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-md px-3 py-2 text-sm text-[#202124]"
               />
-            </div>
-
-            <div>
-              <label className="block text-[#5f6368] font-medium mb-1">Take ID</label>
-              <select
-                value={takeId}
-                onChange={(e) => setTakeId(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-white border border-[#dadce0] text-[#202124] font-semibold"
-              >
-                <option value="take_03">Scene 25 / Take 3 (Conflict Demo Take)</option>
-                <option value="take_01">Scene 25 / Take 1 (Consistent Take)</option>
-                <option value="take_02">Scene 25 / Take 2 (Consistent Take)</option>
-              </select>
             </div>
 
             {/* Drag & Drop File Area */}

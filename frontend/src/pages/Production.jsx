@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Database, History, Search, ArrowRight, Shield, Layers, FileText, Video, AlertTriangle, CheckCircle2, Filter } from 'lucide-react';
 import { getCharacterHistory, getDependencies } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function Production() {
+  const { activeProjectId } = useProject();
   const [character, setCharacter] = useState('arjun');
   const [attribute, setAttribute] = useState('injury_location');
   const [history, setHistory] = useState([]);
@@ -10,11 +12,12 @@ export default function Production() {
   const [loading, setLoading] = useState(false);
 
   const loadState = async () => {
+    if (!activeProjectId) return;
     setLoading(true);
     try {
       const [histRes, depRes] = await Promise.all([
-        getCharacterHistory('project-aurora', character, attribute),
-        getDependencies('project-aurora', 'scene_17'),
+        getCharacterHistory(activeProjectId, character, attribute),
+        getDependencies(activeProjectId, 'scene_17'),
       ]);
       setHistory(histRes.history || []);
       setDependencies(depRes.dependencies || []);
@@ -26,8 +29,10 @@ export default function Production() {
   };
 
   useEffect(() => {
-    loadState();
-  }, [character, attribute]);
+    if (activeProjectId) {
+      loadState();
+    }
+  }, [character, attribute, activeProjectId]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -46,13 +51,6 @@ export default function Production() {
         <div className="flex items-center gap-2 text-xs text-[#5f6368] font-semibold uppercase">
           <Filter className="w-4 h-4 text-[#1a73e8]" />
           Filters:
-        </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-[#5f6368] uppercase mb-1 font-sans">Project</label>
-          <select disabled className="px-3 py-1.5 rounded bg-[#f8f9fa] border border-[#dadce0] text-xs font-mono text-[#202124] font-bold">
-            <option>Project Aurora</option>
-          </select>
         </div>
 
         <div>

@@ -12,11 +12,11 @@ from app.models.schemas import (
 
 logger = logging.getLogger(__name__)
 
-# ── Confidence thresholds ─────────────────────────────────────
+# Confidence thresholds
 HIGH_CONFIDENCE   = 0.85
 MEDIUM_CONFIDENCE = 0.70
 
-# ── High-severity attributes ──────────────────────────────────
+# High-severity attributes
 HIGH_SEVERITY_ATTRIBUTES = {
     "injury_location", "injury_side", "injury_type",
     "watch_wrist", "ring_finger", "scar_location",

@@ -20,8 +20,10 @@ import {
   Filter,
 } from 'lucide-react';
 import { getConflicts, approveConflict } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function Conflicts() {
+  const { activeProjectId } = useProject();
   const [conflicts, setConflicts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterSeverity, setFilterSeverity] = useState('ALL');
@@ -30,9 +32,10 @@ export default function Conflicts() {
   const [directorNotes, setDirectorNotes] = useState('');
 
   const fetchConflicts = async () => {
+    if (!activeProjectId) return;
     setLoading(true);
     try {
-      const res = await getConflicts();
+      const res = await getConflicts(activeProjectId);
       setConflicts(res.conflicts || []);
     } catch (err) {
       console.error(err);
@@ -42,8 +45,10 @@ export default function Conflicts() {
   };
 
   useEffect(() => {
-    fetchConflicts();
-  }, []);
+    if (activeProjectId) {
+      fetchConflicts();
+    }
+  }, [activeProjectId]);
 
   const handleActionExecution = async (conflictId, actionType) => {
     try {
@@ -130,7 +135,19 @@ export default function Conflicts() {
             const blast = typeof conf.blast_radius === 'string'
               ? JSON.parse(conf.blast_radius || '{}')
               : conf.blast_radius || {};
-            const affectedScenes = blast.affected_scenes || ['scene_26', 'scene_28', 'scene_31'];
+            const affectedScenes = blast.affected_scenes || [];
+            
+            let recAction = "RESHOOT_TAKE";
+            let recReasoning = conf.recommendation || "Pending analysis...";
+            try {
+              if (conf.recommendation && conf.recommendation.startsWith("{")) {
+                const recObj = JSON.parse(conf.recommendation);
+                recAction = recObj.action || "ACTION_REQUIRED";
+                recReasoning = recObj.reasoning || recReasoning;
+              }
+            } catch (e) {
+              // fallback
+            }
 
             return (
               <div
@@ -173,10 +190,10 @@ export default function Conflicts() {
                         {conf.attribute_name} = {conf.expected_value}
                       </div>
                       <div className="text-[11px] text-[#5f6368] font-sans">
-                        Established in <strong>Scene 17 Screenplay</strong> (Page 4, Line 12).
+                        Established in Screenplay Baseline.
                       </div>
                       <div className="text-[10px] text-[#188038] font-semibold pt-1 border-t border-[#ceead6]">
-                        98% Confidence · Baseline Fact
+                        Fact · Graph Memory
                       </div>
                     </div>
 
@@ -190,10 +207,10 @@ export default function Conflicts() {
                         {conf.attribute_name} = {conf.observed_value}
                       </div>
                       <div className="text-[11px] text-[#5f6368] font-sans">
-                        Extracted at timestamp <strong>00:12.8</strong> via Gemini 2.0 Vision.
+                        Extracted via Gemini 2.0 Vision Multimodal.
                       </div>
                       <div className="text-[10px] text-[#d93025] font-semibold pt-1 border-t border-[#fad2cf]">
-                        {(conf.confidence * 100).toFixed(0)}% Confidence · Visual Bounding Box
+                        {(conf.confidence * 100).toFixed(0)}% Confidence · Visual Scan
                       </div>
                     </div>
                   </div>
@@ -214,29 +231,19 @@ export default function Conflicts() {
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
-                    <div className="p-3 rounded bg-white border border-[#feefc3] space-y-1">
-                      <div className="flex justify-between text-[#b06000] font-semibold">
-                        <span>SCENE 26</span>
-                        <span className="gc-chip-amber">AFFECTED</span>
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] font-sans">INT. POLICE CAR — Dialogue assumes left_arm bandage.</div>
-                    </div>
-
-                    <div className="p-3 rounded bg-white border border-[#feefc3] space-y-1">
-                      <div className="flex justify-between text-[#b06000] font-semibold">
-                        <span>SCENE 28</span>
-                        <span className="gc-chip-amber">AFFECTED</span>
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] font-sans">EXT. ALLEYWAY — Fight choreography restriction.</div>
-                    </div>
-
-                    <div className="p-3 rounded bg-white border border-[#fad2cf] space-y-1">
-                      <div className="flex justify-between text-[#d93025] font-semibold">
-                        <span>SCENE 31</span>
-                        <span className="gc-chip-red">CRITICAL BREAK</span>
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] font-sans">INT. HOSPITAL — Doctor examines cast on left_arm.</div>
-                    </div>
+                    {affectedScenes.length === 0 ? (
+                      <div className="text-[11px] text-[#5f6368] font-sans">No downstream dependencies found in graph.</div>
+                    ) : (
+                      affectedScenes.map((scene) => (
+                        <div key={scene} className="p-3 rounded bg-white border border-[#feefc3] space-y-1">
+                          <div className="flex justify-between text-[#b06000] font-semibold">
+                            <span className="uppercase">{scene.replace('_', ' ')}</span>
+                            <span className="gc-chip-amber">AFFECTED</span>
+                          </div>
+                          <div className="text-[11px] text-[#5f6368] font-sans">Dependency identified via ClickHouse Graph traversal.</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -246,59 +253,21 @@ export default function Conflicts() {
                     <CheckSquare className="w-4 h-4 text-[#1a73e8]" />
                     Recommended Actions
                   </h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                  <div className="grid grid-cols-1 gap-4 font-mono text-xs">
                     <div
-                      onClick={() => setSelectedAction('OPTION_A')}
+                      onClick={() => setSelectedAction(recAction)}
                       className={`p-4 rounded-md border cursor-pointer transition ${
-                        selectedAction === 'OPTION_A'
+                        selectedAction === recAction
                           ? 'bg-[#e6f4ea] border-[#188038]'
                           : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-[#188038]">OPTION A: RESHOOT TAKE 3</span>
+                        <span className="font-bold text-[#188038]">ACTION: {recAction.replace(/_/g, ' ')}</span>
                         <span className="gc-chip-green">RECOMMENDED</span>
                       </div>
-                      <div className="text-lg font-bold text-[#202124] font-mono">$1,500</div>
-                      <p className="text-xs text-[#5f6368] font-sans mt-1">
-                        Immediate reshoot on set today. Zero downstream script modification.
-                      </p>
-                    </div>
-
-                    <div
-                      onClick={() => setSelectedAction('OPTION_B')}
-                      className={`p-4 rounded-md border cursor-pointer transition ${
-                        selectedAction === 'OPTION_B'
-                          ? 'bg-[#fef7e0] border-[#b06000]'
-                          : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-[#b06000]">OPTION B: ACCEPT EXCEPTION</span>
-                        <span className="gc-chip-amber">SCRIPT MOD</span>
-                      </div>
-                      <div className="text-lg font-bold text-[#b06000] font-mono">$0 Today</div>
-                      <p className="text-xs text-[#5f6368] font-sans mt-1">
-                        Accept Take 3. Requires modifying screenplay state for Scenes 26, 28, 31.
-                      </p>
-                    </div>
-
-                    <div
-                      onClick={() => setSelectedAction('OPTION_C')}
-                      className={`p-4 rounded-md border cursor-pointer transition ${
-                        selectedAction === 'OPTION_C'
-                          ? 'bg-[#fce8e6] border-[#d93025]'
-                          : 'bg-white border-[#dadce0] hover:border-[#bdc1c6]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-[#d93025]">OPTION C: DIGITAL VFX PATCH</span>
-                        <span className="gc-chip-red">HIGH COST</span>
-                      </div>
-                      <div className="text-lg font-bold text-[#d93025] font-mono">$45,000</div>
-                      <p className="text-xs text-[#5f6368] font-sans mt-1">
-                        Paint out bandage digitally in post-production. Adds 3 weeks to release schedule.
+                      <p className="text-xs text-[#5f6368] font-sans mt-2 leading-relaxed">
+                        {recReasoning}
                       </p>
                     </div>
                   </div>

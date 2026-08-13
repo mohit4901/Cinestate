@@ -11,10 +11,12 @@ import Conflicts from './pages/Conflicts';
 import ProductionSearch from './pages/ProductionSearch';
 import AgentActivity from './pages/AgentActivity';
 import Settings from './pages/Settings';
+import { ProjectProvider } from './contexts/ProjectContext';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ProjectProvider>
+      <BrowserRouter>
       <Routes>
         {/* Cinematic Landing Page */}
         <Route path="/" element={<Landing />} />
@@ -34,6 +36,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ProjectProvider>
   );
 }

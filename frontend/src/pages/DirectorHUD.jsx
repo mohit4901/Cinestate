@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Video, Zap, AlertTriangle, CheckCircle2, Camera, Eye, Play, StopCircle, Shield, Sparkles, Target, Database, Activity, Terminal } from 'lucide-react';
 import { analyzeLiveFrame } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 const SCIFI_STYLES = `
   .glass-card {
@@ -42,13 +43,13 @@ const SCIFI_STYLES = `
 `;
 
 export default function DirectorHUD() {
+  const { activeProjectId } = useProject();
   const [streamActive, setStreamActive] = useState(false);
   const [liveScanning, setLiveScanning] = useState(false);
   const [liveScanStatus, setLiveScanStatus] = useState('STANDBY');
   const [detectedState, setDetectedState] = useState(null);
   const [liveObservations, setLiveObservations] = useState([]);
-  const [scanCount, setScanCount] = useState(0);
-  const [pollingIntervalId, setPollingIntervalId] = useState(null);
+  const isStreaming = useRef(false);
   const [terminalLogs, setTerminalLogs] = useState([
     "> INITIALIZING CINESTATE PRODUCTION MEMORY SYSTEM...",
     "> CONNECTING TO CLICKHOUSE CLOUD MCP SERVER... SUCCESS.",
@@ -73,6 +74,7 @@ export default function DirectorHUD() {
   const startCameraStream = async () => {
     try {
       setStreamActive(true);
+      isStreaming.current = true;
       setLiveScanStatus('SCANNING');
       addLog("INITIATING CAMERA SENSOR LINK...");
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -85,33 +87,24 @@ export default function DirectorHUD() {
       addLog("CAMERA LINK ESTABLISHED. COMMENCING LIVE MULTIMODAL SCAN.");
       
       setTimeout(() => {
-        captureAndAnalyzeFrame();
+        if (isStreaming.current) captureAndAnalyzeFrame();
       }, 1000);
-
-      const interval = setInterval(() => {
-        captureAndAnalyzeFrame();
-      }, 2500);
-      setPollingIntervalId(interval);
 
     } catch (err) {
       addLog(`ERROR: SENSOR LINK FAILED: ${err.message}`);
-      setStreamActive(true);
-      captureAndAnalyzeFrame();
+      setStreamActive(false);
+      isStreaming.current = false;
     }
   };
 
   const stopCameraStream = () => {
     setStreamActive(false);
+    isStreaming.current = false;
     setLiveScanStatus('STANDBY');
     setDetectedState(null);
     setLiveObservations([]);
     addLog("CAMERA SENSOR LINK TERMINATED. STANDBY MODE.");
     
-    if (pollingIntervalId) {
-      clearInterval(pollingIntervalId);
-      setPollingIntervalId(null);
-    }
-
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
       tracks.forEach((track) => track.stop());
@@ -199,8 +192,24 @@ export default function DirectorHUD() {
       if (videoRef.current && canvasRef.current && videoRef.current.readyState === 4) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
+        
+        // Hardcap resolution to 640x480 max to save payload size (Network Optimization)
+        const maxW = 640;
+        const maxH = 480;
+        let w = video.videoWidth || 640;
+        let h = video.videoHeight || 480;
+        
+        if (w > maxW) {
+            h = Math.floor(h * (maxW / w));
+            w = maxW;
+        }
+        if (h > maxH) {
+            w = Math.floor(w * (maxH / h));
+            h = maxH;
+        }
+
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -208,7 +217,7 @@ export default function DirectorHUD() {
       }
 
       const formData = new FormData();
-      formData.append('project_id', 'project-aurora');
+      formData.append('project_id', activeProjectId);
       formData.append('scene_id', 'scene_25'); 
       if (imageBlob) {
         formData.append('file', imageBlob, 'live_frame.jpg');
@@ -217,7 +226,8 @@ export default function DirectorHUD() {
       const res = await analyzeLiveFrame(formData);
       const latency = Date.now() - startTime;
 
-      setScanCount((prev) => prev + 1);
+      if (!isStreaming.current) return; // Prevent state updates if component unmounted or stopped
+
       setLiveObservations(res.observations || []);
       
       drawSciFiBoxes(res.observations || []);
@@ -254,17 +264,34 @@ export default function DirectorHUD() {
         addLog(`CLICKHOUSE VERIFICATION: PASSED. NO CONFLICTS WITH SCENE 25 BASELINE.`);
       }
     } catch (err) {
-      addLog(`API ERROR: GEMINI KEY MISSING OR CONNECTION FAILED.`);
+      if (isStreaming.current) addLog(`API ERROR: GEMINI KEY MISSING OR CONNECTION FAILED.`);
     } finally {
       setLiveScanning(false);
+      // Recursive call for non-overlapping polling
+      if (isStreaming.current) {
+        setTimeout(captureAndAnalyzeFrame, 1500);
+      }
+    }
+  };
+
+  const seedDemoData = async () => {
+    try {
+      addLog("SEEDING DEMO BASELINE DATA INTO CLICKHOUSE...");
+      const res = await fetch(`http://127.0.0.1:8000/seed-demo-data?project_id=${activeProjectId}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        addLog("DEMO BASELINE SEEDED SUCCESSFULLY. READY TO SCAN.");
+      }
+    } catch (e) {
+      addLog("ERROR SEEDING DEMO DATA: " + e.message);
     }
   };
 
   useEffect(() => {
     return () => {
-      if (pollingIntervalId) clearInterval(pollingIntervalId);
+      isStreaming.current = false;
     };
-  }, [pollingIntervalId]);
+  }, []);
 
   return (
     <div className="bg-[#050505] min-h-screen p-6 text-[#e5e5e5] font-sans relative overflow-hidden" style={{ margin: '-24px', padding: '24px' }}>
@@ -293,6 +320,16 @@ export default function DirectorHUD() {
                 <Activity className={`w-4 h-4 ${liveScanning ? 'animate-pulse' : ''}`} />
                 {liveScanning ? 'Gemini Analysing...' : 'Gemini Standby'}
               </div>
+            )}
+
+            {!streamActive && (
+              <button
+                onClick={seedDemoData}
+                className="px-6 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-500 border border-emerald-500/50 font-bold rounded flex items-center gap-2 text-xs uppercase tracking-widest transition-all"
+              >
+                <Database className="w-4 h-4" />
+                Seed Demo Baseline
+              </button>
             )}
 
             {!streamActive ? (
@@ -430,9 +467,20 @@ export default function DirectorHUD() {
 
                   {/* Actions */}
                   {liveScanStatus === 'CONFLICT_FOUND' && (
-                    <button className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-widest rounded shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all">
-                      ISSUE RESHOOT ORDER
-                    </button>
+                    <div className="flex gap-4 mt-2">
+                      <button className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-widest rounded shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all">
+                        ISSUE RESHOOT
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setLiveScanStatus('STANDBY');
+                          setDetectedState(null);
+                          addLog("HUMAN OVERRIDE: FALSE ALARM DISMISSED. RESETTING TO STANDBY.");
+                        }}
+                        className="flex-1 py-4 bg-gray-800 border border-gray-600 hover:bg-gray-700 text-gray-300 font-bold text-sm uppercase tracking-widest rounded transition-all">
+                        IGNORE (FALSE ALARM)
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

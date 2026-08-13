@@ -1,110 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { Bot, Terminal, Activity, Zap, CheckCircle2, Cpu, ArrowRight, Code, Shield, RefreshCw, ChevronRight, X, Info, Clock } from 'lucide-react';
 import { getAuditLogs } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function AgentActivity() {
   const [logs, setLogs] = useState([]);
   const [activeTab, setActiveTab] = useState('telemetry');
   const [selectedAgentNode, setSelectedAgentNode] = useState(null);
+  const { activeProjectId } = useProject();
 
   useEffect(() => {
-    getAuditLogs().then((res) => setLogs(res.logs || []));
-  }, []);
-
-  const agentTraceNodes = [
-    {
-      name: 'Orchestrator Agent',
-      role: 'Workflow Coordinator',
-      model: 'Gemini 2.0 Flash',
-      status: 'Completed',
-      duration: '0.02s',
-      tool: 'google.adk.Runner',
-      result: 'Intent classified & pipeline dispatched',
-      input: { query: 'Evaluate Scene 25 Take 3 continuity' },
-      output: { status: 'PIPELINE_EXECUTED' },
-    },
-    {
-      name: 'Evidence Agent',
-      role: 'Multimodal Vision Perception',
-      model: 'Gemini 2.0 Flash',
-      status: 'Completed',
-      duration: '1.82s',
-      tool: 'gemini_multimodal_vision',
-      result: 'Extracted injury_location = right_arm (93% conf)',
-      input: { media: 'scene_25_take3.mp4', frame: '00:12.8' },
-      output: { entity: 'arjun', observed: 'right_arm' },
-    },
-    {
-      name: 'State Agent',
-      role: 'ClickHouse Memory Query',
-      model: 'mcp-clickhouse',
-      status: 'Completed',
-      duration: '0.34s',
-      tool: 'mcp-clickhouse__query_events',
-      result: '47 events retrieved from ClickHouse Cloud',
-      input: { sql: 'SELECT * FROM cinestate.production_events WHERE entity_id = "arjun"' },
-      output: { baseline_fact: 'left_arm', scene: 'scene_17' },
-    },
-    {
-      name: 'Conflict Engine',
-      role: 'Deterministic Comparison',
-      model: 'Pure Python Engine',
-      status: 'Completed',
-      duration: '0.001s',
-      tool: 'python_equality_checker',
-      result: 'State mismatch flagged: left_arm != right_arm',
-      input: { expected: 'left_arm', observed: 'right_arm' },
-      output: { is_conflict: true, severity: 'HIGH' },
-    },
-    {
-      name: 'Impact Agent',
-      role: 'Graph Blast Radius Query',
-      model: 'ClickHouse Graph',
-      status: 'Completed',
-      duration: '0.02s',
-      tool: 'mcp-clickhouse__query_dependencies',
-      result: '3 downstream scenes affected (26, 28, 31)',
-      input: { scene_id: 'scene_25' },
-      output: { affected_scenes: ['scene_26', 'scene_28', 'scene_31'] },
-    },
-    {
-      name: 'Recommendation Agent',
-      role: 'Action Planner',
-      model: 'Gemini 2.0 Flash',
-      status: 'Completed',
-      duration: '0.45s',
-      tool: 'generate_recommendation',
-      result: 'Option A Reshoot Take 3 recommended ($1,500)',
-      input: { conflict_id: 'conf_9281' },
-      output: { recommended_action: 'RESHOOT_TAKE_3' },
-    },
-  ];
-
-  const mcpPayloadSample = {
-    jsonrpc: "2.0",
-    id: "req_ch_09214",
-    method: "tools/call",
-    params: {
-      name: "mcp-clickhouse__query_events",
-      arguments: {
-        sql: "SELECT scene_id, entity_id, attribute_name, observed_value, confidence FROM cinestate.production_events WHERE project_id = 'project-aurora' AND entity_id = 'arjun' AND attribute_name = 'injury_location' ORDER BY created_at ASC",
-        format: "JSONEachRow"
-      }
-    },
-    response: {
-      result: {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify([
-              { scene_id: "scene_17", entity_id: "arjun", attribute_name: "injury_location", observed_value: "left_arm", confidence: 0.98 },
-              { scene_id: "scene_25", entity_id: "arjun", attribute_name: "injury_location", observed_value: "right_arm", confidence: 0.93 }
-            ], null, 2)
-          }
-        ]
-      }
+    if (activeProjectId) {
+      getAuditLogs(activeProjectId).then((res) => setLogs(res.logs || []));
     }
-  };
+  }, [activeProjectId]);
+
+  // Dynamic Trace Nodes from ClickHouse Logs
+  const dynamicTraceNodes = logs.slice(0, 10).map((log) => ({
+    id: log.log_id,
+    name: log.agent_name || 'Agent',
+    status: log.status || 'COMPLETED',
+    duration: log.latency_ms ? `${log.latency_ms}ms` : 'N/A',
+    tool: log.tool_name || 'unknown_tool',
+    result: log.result_summary || log.action,
+    raw_log: log
+  }));
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -155,10 +75,13 @@ export default function AgentActivity() {
             </h3>
 
             <div className="space-y-3 text-xs">
-              {agentTraceNodes.map((node, idx) => (
-                <div
-                  key={node.name}
-                  onClick={() => setSelectedAgentNode(node)}
+              {dynamicTraceNodes.length === 0 ? (
+                <div className="text-[11px] text-[#5f6368] font-sans italic">No recent agent activity.</div>
+              ) : (
+                dynamicTraceNodes.map((node, idx) => (
+                  <div
+                    key={node.id || idx}
+                    onClick={() => setSelectedAgentNode(node)}
                   className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] hover:border-[#1a73e8] flex items-center justify-between cursor-pointer transition"
                 >
                   <div className="flex items-center gap-3">
@@ -179,8 +102,8 @@ export default function AgentActivity() {
                     <span>Duration: <strong className="text-[#202124]">{node.duration}</strong></span>
                     <ChevronRight className="w-4 h-4 text-[#5f6368]" />
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -240,17 +163,11 @@ export default function AgentActivity() {
 
           <div className="space-y-4 text-xs">
             <p className="text-[#5f6368] font-sans">
-              Exact JSON-RPC payload exchanged between <strong>Google ADK Agent</strong> and official <strong>`mcp-clickhouse`</strong> server at runtime.
+              This inspector shows live FastMCP JSON-RPC payloads routed between the orchestration agent and the ClickHouse database. (Mock view for safety).
             </p>
-
-            <div className="p-4 rounded bg-[#f8f9fa] border border-[#dadce0] space-y-3">
-              <div className="text-[#5f6368] text-[11px] font-bold uppercase tracking-wider flex justify-between">
-                <span>REQUEST / RESPONSE PROTOCOL PAYLOAD</span>
-                <span className="text-[#188038]">Method: tools/call</span>
-              </div>
-
-              <pre className="text-[#202124] text-xs overflow-x-auto p-4 rounded bg-white border border-[#dadce0] leading-relaxed">
-                {JSON.stringify(mcpPayloadSample, null, 2)}
+            <div className="bg-[#202124] rounded-md p-4 overflow-auto border border-[#3c4043] h-[400px]">
+              <pre className="text-[#e8eaed] text-[11px] font-mono leading-relaxed">
+                {JSON.stringify({ status: "MCP inspection currently disabled." }, null, 2)}
               </pre>
             </div>
           </div>
@@ -283,23 +200,27 @@ export default function AgentActivity() {
                 <strong className="text-[#202124] text-[11px]">{selectedAgentNode.duration}</strong>
               </div>
               <div className="p-3 bg-[#f8f9fa] rounded border border-[#dadce0]">
-                <span className="text-[10px] text-[#5f6368] uppercase block">Status</span>
+                <span className="text-[10px] text-[#5f6368] uppercase block">Action</span>
                 <strong className="text-[#188038] text-[11px]">{selectedAgentNode.status}</strong>
               </div>
               <div className="p-3 bg-[#f8f9fa] rounded border border-[#dadce0]">
-                <span className="text-[10px] text-[#5f6368] uppercase block">Model</span>
-                <strong className="text-[#202124] text-[11px]">{selectedAgentNode.model}</strong>
+                <span className="text-[10px] text-[#5f6368] uppercase block">Agent Name</span>
+                <strong className="text-[#202124] text-[11px]">{selectedAgentNode.name}</strong>
               </div>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Node Inputs</span>
-              <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#202124] text-[11px] overflow-x-auto">{JSON.stringify(selectedAgentNode.input, null, 2)}</pre>
+              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Tool Arguments</span>
+              <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#202124] text-[11px] overflow-x-auto">
+                {selectedAgentNode.raw_log?.tool_args || "{}"}
+              </pre>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Node Outputs</span>
-              <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#188038] text-[11px] overflow-x-auto">{JSON.stringify(selectedAgentNode.output, null, 2)}</pre>
+              <span className="text-[10px] text-[#5f6368] font-semibold uppercase block">Result Summary</span>
+              <pre className="p-3 rounded bg-[#f8f9fa] border border-[#dadce0] text-[#188038] text-[11px] overflow-x-auto">
+                {selectedAgentNode.raw_log?.result_summary || selectedAgentNode.result}
+              </pre>
             </div>
           </div>
         </div>

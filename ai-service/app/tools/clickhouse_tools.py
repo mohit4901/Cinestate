@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 _repo = ClickHouseRepository()
 
 
-# ── Tool 1: Character History ─────────────────────────────────
+# Tool 1: Character History
 
 def get_character_history(
     project_id: str,
@@ -86,7 +86,7 @@ def get_character_history(
         return {"error": str(e), "history": [], "character": character, "attribute": attribute}
 
 
-# ── Tool 2: Scene History ─────────────────────────────────────
+# Tool 2: Scene History
 
 def get_scene_history(project_id: str, scene_id: str) -> dict:
     """
@@ -132,7 +132,7 @@ def get_scene_history(project_id: str, scene_id: str) -> dict:
         return {"error": str(e), "events": [], "scene_id": scene_id}
 
 
-# ── Tool 3: Take Observations ─────────────────────────────────
+# Tool 3: Take Observations
 
 def get_take_observations(project_id: str, take_id: str) -> dict:
     """
@@ -171,7 +171,7 @@ def get_take_observations(project_id: str, take_id: str) -> dict:
         return {"error": str(e), "observations": [], "take_id": take_id}
 
 
-# ── Tool 4: Open Conflicts ────────────────────────────────────
+# Tool 4: Open Conflicts
 
 def get_open_conflicts(project_id: str) -> dict:
     """
@@ -215,7 +215,7 @@ def get_open_conflicts(project_id: str) -> dict:
         return {"error": str(e), "conflicts": [], "total_conflicts": 0}
 
 
-# ── Tool 5: Downstream Dependencies (Blast Radius) ────────────
+# Tool 5: Downstream Dependencies (Blast Radius)
 
 def get_downstream_dependencies(project_id: str, scene_id: str) -> dict:
     """
@@ -263,7 +263,7 @@ def get_downstream_dependencies(project_id: str, scene_id: str) -> dict:
         return {"error": str(e), "affected_scenes": [], "affected_scene_count": 0}
 
 
-# ── Tool 6: Search Production Events ─────────────────────────
+# Tool 6: Search Production Events
 
 def search_production_events(
     project_id: str,
@@ -323,7 +323,7 @@ def search_production_events(
         return {"error": str(e), "events": [], "result_count": 0}
 
 
-# ── Tool 7: Project Stats ─────────────────────────────────────
+# Tool 7: Project Stats
 
 def get_project_stats(project_id: str) -> dict:
     """

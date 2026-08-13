@@ -21,6 +21,7 @@ import {
   Info,
 } from 'lucide-react';
 import { getStats, getConflicts, getDependencies, analyzeTake } from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -29,15 +30,17 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [watchdogRunning, setWatchdogRunning] = useState(false);
   const [watchdogStep, setWatchdogStep] = useState(0);
+  const { activeProjectId } = useProject();
   const navigate = useNavigate();
 
   const loadData = async () => {
+    if (!activeProjectId) return;
     setLoading(true);
     try {
       const [statsRes, confRes, depRes] = await Promise.all([
-        getStats(),
-        getConflicts(),
-        getDependencies('project-aurora', 'scene_17'),
+        getStats(activeProjectId),
+        getConflicts(activeProjectId),
+        getDependencies(activeProjectId, 'scene_17'),
       ]);
       setStats(statsRes.stats);
       setConflicts(confRes.conflicts || []);
@@ -50,8 +53,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (activeProjectId) {
+      loadData();
+    }
+  }, [activeProjectId]);
 
   const runAutonomousWatchdog = async () => {
     setWatchdogRunning(true);
@@ -63,8 +68,9 @@ export default function Dashboard() {
 
     try {
       await analyzeTake({
-        project_id: 'project-aurora',
+        project_id: activeProjectId,
         scene_id: 'scene_25',
+        entity_id: 'arjun',
         take_id: 'take_03',
         file_path: './uploads/scene_25_take3.mp4',
       });

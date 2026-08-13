@@ -9,16 +9,16 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # ── Google Cloud ─────────────────────────────────────────
+    # Google Cloud
     google_cloud_project: str = ""
     google_cloud_location: str = "us-central1"
     google_application_credentials: Optional[str] = None
 
-    # ── Gemini ───────────────────────────────────────────────
+    # Gemini
     gemini_model: str = "gemini-3.5-flash"
     gemini_api_key: Optional[str] = None
 
-    # ── ClickHouse ───────────────────────────────────────────
+    # ClickHouse
     clickhouse_host: str = "localhost"
     clickhouse_port: int = 8123
     clickhouse_database: str = "cinestate"
@@ -26,21 +26,21 @@ class Settings(BaseSettings):
     clickhouse_password: str = ""
     clickhouse_secure: bool = False
 
-    # ── Storage ──────────────────────────────────────────────
+    # Storage
     gcs_bucket: str = "cinestate-media"
     use_local_storage: bool = True
     local_storage_path: str = "./uploads"
 
-    # ── Service ──────────────────────────────────────────────
+    # Service
     ai_service_port: int = 8000
     log_level: str = "info"
     enable_agent_tracing: bool = True
 
-    # ── Demo ─────────────────────────────────────────────────
+    # Demo
     demo_mode: bool = True
     demo_project_id: str = "project-aurora"
 
-    # ── Thresholds ───────────────────────────────────────────
+    # Thresholds
     # Below this confidence → LOW confidence warning, no auto-conflict
     confidence_threshold: float = 0.7
 

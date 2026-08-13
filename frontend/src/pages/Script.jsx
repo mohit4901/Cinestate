@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Sparkles, Film, CheckCircle2, FileUp, Activity, Check, Info } from 'lucide-react';
 import api from '../services/api';
+import { useProject } from '../contexts/ProjectContext';
 
 export default function Script() {
+  const { activeProjectId } = useProject();
   const [selectedFile, setSelectedFile] = useState(null);
   const [parsing, setParsing] = useState(false);
   const [parseStep, setParseStep] = useState(0);
@@ -24,7 +26,7 @@ export default function Script() {
 
     try {
       const formData = new FormData();
-      formData.append('project_id', 'project-aurora');
+      formData.append('project_id', activeProjectId);
       if (selectedFile) {
         formData.append('file', selectedFile);
       }
@@ -42,37 +44,7 @@ export default function Script() {
     }
   };
 
-  const scenes = result?.scenes || [
-    {
-      scene_id: 'scene_17',
-      scene_number: 17,
-      location: 'INT. HOTEL ROOM - NIGHT',
-      time_of_day: 'NIGHT',
-      characters: ['Arjun'],
-      props: ['Whiskey glass', 'Watch'],
-      wardrobe: ['Black jacket', 'White shirt'],
-      description: 'Arjun tends to his LEFT ARM injury. Watch on LEFT wrist.',
-      states: [
-        { character: 'arjun', attribute: 'injury_location', value: 'left_arm', confidence: 0.98 },
-        { character: 'arjun', attribute: 'watch_wrist', value: 'left', confidence: 0.96 },
-      ],
-      depends_on: ['scene_01'],
-    },
-    {
-      scene_id: 'scene_25',
-      scene_number: 25,
-      location: 'INT. INTERROGATION ROOM',
-      time_of_day: 'DAY',
-      characters: ['Arjun', 'Detective'],
-      props: ['Evidence files'],
-      wardrobe: ['Black jacket'],
-      description: 'Arjun interrogated. Injury from Scene 17 must be on LEFT ARM.',
-      states: [
-        { character: 'arjun', attribute: 'injury_location', value: 'left_arm', confidence: 0.95 },
-      ],
-      depends_on: ['scene_17'],
-    },
-  ];
+  const scenes = result?.scenes || [];
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
