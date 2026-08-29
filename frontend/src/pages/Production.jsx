@@ -34,6 +34,8 @@ export default function Production() {
     }
   }, [character, attribute, activeProjectId]);
 
+  const isCyberpunk = activeProjectId?.includes('neomumbai') || activeProjectId?.includes('cyber') || character === 'vikram';
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
@@ -60,8 +62,10 @@ export default function Production() {
             onChange={(e) => setCharacter(e.target.value)}
             className="px-3 py-1.5 rounded bg-white border border-[#dadce0] text-xs font-mono text-[#202124] font-bold"
           >
-            <option value="arjun">Arjun (Lead Character)</option>
-            <option value="maya">Maya (Co-Lead)</option>
+            <option value="vikram">Vikram Roy (Cyberpunk Bounty Hunter)</option>
+            <option value="tara">Tara Mehta (Operative)</option>
+            <option value="arjun">Arjun (Polar Station Officer)</option>
+            <option value="maya">Maya (Research Specialist)</option>
           </select>
         </div>
 
@@ -72,9 +76,19 @@ export default function Production() {
             onChange={(e) => setAttribute(e.target.value)}
             className="px-3 py-1.5 rounded bg-white border border-[#dadce0] text-xs font-mono text-[#202124] font-bold"
           >
-            <option value="injury_location">Injury Location</option>
-            <option value="watch_wrist">Watch Wrist</option>
-            <option value="jacket_color">Jacket Color</option>
+            {character === 'vikram' || character === 'tara' ? (
+              <>
+                <option value="cybernetic_eye">Cybernetic Ocular Implant</option>
+                <option value="weapon_holster">Weapon Holster</option>
+                <option value="wardrobe">Wardrobe / Trenchcoat</option>
+              </>
+            ) : (
+              <>
+                <option value="injury_location">Injury Location</option>
+                <option value="watch_wrist">Watch Wrist</option>
+                <option value="jacket_color">Jacket Color</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -87,7 +101,7 @@ export default function Production() {
       </div>
 
       {/* Main Memory Timeline & State Tree */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 gc-card p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
             <h3 className="text-sm font-semibold text-[#202124] flex items-center gap-2">
@@ -99,57 +113,114 @@ export default function Production() {
             </span>
           </div>
 
-          <div className="space-y-4 font-mono text-xs">
-            {/* Step 1: Scene 17 Baseline */}
-            <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2 relative">
-              <div className="flex justify-between items-center">
-                <span className="text-[#1a73e8] font-bold text-xs flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  SCENE 17 — SCREENPLAY BASELINE FACT
-                </span>
-                <span className="gc-chip-green">98% CONFIDENCE</span>
-              </div>
-              <div className="text-sm font-bold text-[#202124]">
-                {attribute} = <code className="text-[#1a73e8]">left_arm</code>
-              </div>
-              <p className="text-xs text-[#5f6368] font-sans">
-                Extracted from Scene 17 Screenplay PDF Page 4. Initial state snapshot in ClickHouse Cloud.
-              </p>
-            </div>
+          <div className="space-y-4 text-xs font-sans">
+            {character === 'vikram' ? (
+              <>
+                {/* Event 1 - Script Baseline */}
+                <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#1a73e8] font-semibold flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" />
+                      SCENE 4 — SCREENPLAY BASELINE FACT
+                    </span>
+                    <span className="gc-chip-green">98% CONFIDENCE</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#202124]">
+                    cybernetic_eye = <span className="text-[#1a73e8]">left</span>
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Scene 4 Screenplay PDF Page 1. Vikram's titanium ocular implant glows cyan on left eye.
+                  </p>
+                </div>
 
-            {/* Step 2: Scene 21 Confirmation */}
-            <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[#1a73e8] font-bold text-xs flex items-center gap-2">
-                  <Video className="w-4 h-4" />
-                  SCENE 21 — CONFIRMED FOOTAGE OBSERVATION
-                </span>
-                <span className="gc-chip-green">96% CONFIDENCE</span>
-              </div>
-              <div className="text-sm font-bold text-[#202124]">
-                {attribute} = <code className="text-[#1a73e8]">left_arm</code>
-              </div>
-              <p className="text-xs text-[#5f6368] font-sans">
-                Extracted from Scene 21 Take 1 footage by Gemini 2.0 Vision. Consistent with Scene 17 baseline.
-              </p>
-            </div>
+                {/* Event 2 - Observation 1 */}
+                <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#1a73e8] font-semibold flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5" />
+                      SCENE 12 — CONFIRMED FOOTAGE OBSERVATION
+                    </span>
+                    <span className="gc-chip-green">96% CONFIDENCE</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#202124]">
+                    cybernetic_eye = <span className="text-[#1a73e8]">left</span>
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Scene 12 Take 1 footage by Gemini 2.0 Vision. Verified on left eye during encrypted transfer.
+                  </p>
+                </div>
 
-            {/* Step 3: Scene 25 Conflict */}
-            <div className="p-4 rounded-md bg-[#fce8e6]/40 border border-[#fad2cf] space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[#d93025] font-bold text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  SCENE 25 (TAKE 3) — OBSERVED FOOTAGE
-                </span>
-                <span className="gc-chip-red">CONFLICT (93% CONF)</span>
-              </div>
-              <div className="text-sm font-bold text-[#d93025]">
-                {attribute} = <code className="text-[#d93025]">right_arm</code>
-              </div>
-              <p className="text-xs text-[#202124] font-sans">
-                Extracted from Take 3 video footage @ 00:12.8. Mismatch flagged: <code className="text-[#d93025] font-bold">left_arm != right_arm</code>.
-              </p>
-            </div>
+                {/* Event 3 - Conflict Observation */}
+                <div className="p-4 rounded-md bg-[#fce8e6]/30 border border-[#fad2cf] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#d93025] font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      SCENE 18 (TAKE 3) — OBSERVED FOOTAGE
+                    </span>
+                    <span className="gc-chip-red">CONFLICT (98% CONF)</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#d93025]">
+                    cybernetic_eye = right
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Take 3 pursuit footage @ 00:08.5. Mismatch flagged: <span className="font-bold text-[#d93025]">left != right</span>.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Event 1 - Script Baseline */}
+                <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#1a73e8] font-semibold flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" />
+                      SCENE 17 — SCREENPLAY BASELINE FACT
+                    </span>
+                    <span className="gc-chip-green">98% CONFIDENCE</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#202124]">
+                    injury_location = <span className="text-[#1a73e8]">left_arm</span>
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Scene 17 Screenplay PDF Page 4. Initial state snapshot in ClickHouse Cloud.
+                  </p>
+                </div>
+
+                {/* Event 2 - Observation 1 */}
+                <div className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#1a73e8] font-semibold flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5" />
+                      SCENE 21 — CONFIRMED FOOTAGE OBSERVATION
+                    </span>
+                    <span className="gc-chip-green">96% CONFIDENCE</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#202124]">
+                    injury_location = <span className="text-[#1a73e8]">left_arm</span>
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Scene 21 Take 1 footage by Gemini 2.0 Vision. Consistent with Scene 17 baseline.
+                  </p>
+                </div>
+
+                {/* Event 3 - Conflict Observation */}
+                <div className="p-4 rounded-md bg-[#fce8e6]/30 border border-[#fad2cf] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#d93025] font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      SCENE 25 (TAKE 3) — OBSERVED FOOTAGE
+                    </span>
+                    <span className="gc-chip-red">CONFLICT (93% CONF)</span>
+                  </div>
+                  <div className="text-sm font-bold text-[#d93025]">
+                    injury_location = right_arm
+                  </div>
+                  <p className="text-xs text-[#5f6368]">
+                    Extracted from Take 3 video footage @ 00:12.8. Mismatch flagged: <span className="font-bold text-[#d93025]">left_arm != right_arm</span>.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

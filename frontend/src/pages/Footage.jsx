@@ -90,6 +90,22 @@ export default function Footage() {
                 placeholder="e.g. take_03"
               />
             </div>
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => { setEntityId('vikram'); setSceneId('scene_18'); }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold cursor-pointer border ${entityId === 'vikram' ? 'bg-[#1a73e8] text-white border-[#1a73e8]' : 'bg-white text-[#5f6368] border-[#dadce0]'}`}
+              >
+                Vikram (Cyberpunk)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEntityId('arjun'); setSceneId('scene_25'); }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold cursor-pointer border ${entityId === 'arjun' ? 'bg-[#1a73e8] text-white border-[#1a73e8]' : 'bg-white text-[#5f6368] border-[#dadce0]'}`}
+              >
+                Arjun (Aurora)
+              </button>
+            </div>
             <div>
               <label className="block text-xs font-semibold text-[#5f6368] mb-1.5 uppercase">Character / Entity Name</label>
               <input
@@ -97,7 +113,7 @@ export default function Footage() {
                 value={entityId}
                 onChange={(e) => setEntityId(e.target.value)}
                 className="w-full bg-white border border-[#dadce0] rounded-md px-3 py-2 text-sm text-[#202124] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition"
-                placeholder="e.g. arjun or detective"
+                placeholder="e.g. vikram or arjun"
               />
             </div>
             <div>
@@ -181,10 +197,12 @@ export default function Footage() {
               <div className="aspect-video rounded bg-[#202124] relative overflow-hidden flex items-center justify-center shadow-xs">
                 <div className="absolute inset-10 border border-[#188038] rounded bg-[#188038]/20 flex items-start justify-end p-2">
                   <span className="bg-[#188038] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                    LEFT ARM INJURY @ 00:09.1 (98%)
+                    {entityId === 'vikram' ? 'LEFT OCULAR IMPLANT @ 00:04.1 (95%)' : 'LEFT ARM INJURY @ 00:09.1 (98%)'}
                   </span>
                 </div>
-                <div className="relative z-10 text-center text-xs text-white">Scene 25 / Take 1</div>
+                <div className="relative z-10 text-center text-xs text-white">
+                  {entityId === 'vikram' ? 'Scene 12 / Take 1 (Vikram)' : 'Scene 25 / Take 1 (Arjun)'}
+                </div>
               </div>
             </div>
 
@@ -197,10 +215,12 @@ export default function Footage() {
               <div className="aspect-video rounded bg-[#202124] relative overflow-hidden flex items-center justify-center shadow-xs">
                 <div className="absolute inset-10 border-2 border-[#d93025] rounded bg-[#d93025]/20 flex items-start justify-end p-2 animate-pulse">
                   <span className="bg-[#d93025] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                    RIGHT ARM INJURY @ 00:12.8 (93%)
+                    {entityId === 'vikram' ? 'RIGHT OCULAR IMPLANT @ 00:08.5 (98%)' : 'RIGHT ARM INJURY @ 00:12.8 (93%)'}
                   </span>
                 </div>
-                <div className="relative z-10 text-center text-xs text-white">Scene 25 / Take 3</div>
+                <div className="relative z-10 text-center text-xs text-white">
+                  {entityId === 'vikram' ? 'Scene 18 / Take 3 (Vikram)' : 'Scene 25 / Take 3 (Arjun)'}
+                </div>
               </div>
             </div>
           </div>
