@@ -546,6 +546,18 @@ def approve_conflict(req: ApprovalRequest):
             approval_status=req.action,
         ))
 
+        action_badge = "\033[1;92m● APPROVED & RESOLVED\033[0m" if req.action == "APPROVE" else "\033[1;91m● EXCEPTION REJECTED\033[0m"
+        print_hud_box(
+            title="⚖️  DIRECTOR ACTION EXECUTED",
+            subtitle=f"\033[1mConflict Target\033[0m : \033[1;33m{req.conflict_id[:16]}...\033[0m  │  \033[1mAuthorized By\033[0m : \033[1;37m{req.approved_by}\033[0m",
+            lines=[
+                f"⚡ \033[1mDecision\033[0m             : {action_badge}",
+                f"💾 \033[1mClickHouse Ledger\033[0m    : \033[92m● Immutable audit record committed to agent_audit_log\033[0m",
+                f"🎯 \033[1mProduction Status\033[0m    : \033[92mContinuity graph updated. Downstream scenes unblocked.\033[0m",
+            ],
+            color="\033[1;32m" if req.action == "APPROVE" else "\033[1;31m",
+        )
+
         return {"success": True, "conflict_id": req.conflict_id, "status": req.action}
     except Exception as e:
         logger.error(f"approve-conflict error: {e}")

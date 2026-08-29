@@ -132,6 +132,7 @@ router.post('/conflicts/:conflictId/approve', async (req, res) => {
       project_id: req.body?.project_id || 'project-aurora',
     });
 
+    console.log(`\x1b[32m[Node Gateway]\x1b[0m ⚖️  Conflict Action '${action}' forwarded to AI Engine & ClickHouse.`);
     res.json(resp.data);
   } catch (err) {
     console.error('Approve conflict error:', err.message);
