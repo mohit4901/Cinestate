@@ -48,10 +48,10 @@ agent_client = genai.Client(api_key=settings.gemini_api_key or "DUMMY")
 
 # Silence noisy background logs (uvicorn access spam, httpx requests, clickhouse internals)
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(message)s")
-for name in ["uvicorn.access", "httpx", "google_genai", "app.integrations.clickhouse.repository", 
-             "app.integrations.clickhouse.client", "app.services.state_engine", "app.agents.evidence_agent",
-             "google.adk", "clickhouse_connect"]:
-    logging.getLogger(name).setLevel(logging.WARNING)
+for name in ["uvicorn.access", "httpx", "google_genai", "google.genai", "google.genai.types", "google_genai.types",
+             "app.integrations.clickhouse.repository", "app.integrations.clickhouse.client", 
+             "app.services.state_engine", "app.agents.evidence_agent", "google.adk", "clickhouse_connect"]:
+    logging.getLogger(name).setLevel(logging.ERROR)
 
 logger = logging.getLogger("cinestate.ai_service")
 
