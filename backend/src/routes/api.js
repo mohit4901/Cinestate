@@ -343,7 +343,14 @@ router.post('/analyze-live-frame', upload.single('file'), async (req, res) => {
 
 router.post('/analyze-take', async (req, res) => {
   try {
-    const resp = await axios.post(`${AI_SERVICE_URL}/analyze-media`, req.body);
+    const payload = {
+      project_id: req.body?.project_id || req.body?.projectId || 'project-aurora',
+      scene_id: req.body?.scene_id || req.body?.sceneId || 'scene_25',
+      take_id: req.body?.take_id || req.body?.takeId || 'take_03',
+      entity_id: req.body?.entity_id || req.body?.entityId || 'arjun',
+      file_path: req.body?.file_path || req.body?.filePath || './uploads/scene_25_take3.mp4',
+    };
+    const resp = await axios.post(`${AI_SERVICE_URL}/analyze-media`, payload);
     res.json(resp.data);
   } catch (err) {
     console.error('Analyze take proxy error:', err.message);

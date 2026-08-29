@@ -271,9 +271,9 @@ class AnalyzeScriptRequest(BaseModel):
 
 
 class AnalyzeMediaRequest(BaseModel):
-    project_id: str
-    scene_id:   str
-    take_id:    str
+    project_id: Optional[str] = "project-aurora"
+    scene_id:   Optional[str] = "scene_25"
+    take_id:    Optional[str] = "take_03"
     file_path:  Optional[str] = ""
     entity_id:  Optional[str] = "arjun"
 
