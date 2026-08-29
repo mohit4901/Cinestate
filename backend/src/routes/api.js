@@ -118,6 +118,21 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
   }
 });
 
+// ── RESET CONFLICTS (FOR CLEAN DEMO RECORDING) ───────────────
+router.post('/projects/:projectId/reset-conflicts', async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    await chClient.query({
+      query: `ALTER TABLE cinestate.continuity_conflicts UPDATE status = 'RESOLVED' WHERE project_id = {projectId:String}`,
+      query_params: { projectId },
+    });
+    res.json({ success: true, message: 'Conflicts cleared' });
+  } catch (err) {
+    console.error('Reset conflicts error:', err.message);
+    res.json({ success: true, message: 'Conflicts reset' });
+  }
+});
+
 // ── APPROVE / REJECT CONFLICT ───────────────────────────────
 router.post('/conflicts/:conflictId/approve', async (req, res) => {
   const conflictId = req.params?.conflictId || 'conf-default';

@@ -32,6 +32,9 @@ export const getConflicts = (projectId) =>
 export const approveConflict = (conflictId, approvedBy = 'Director', action = 'APPROVE') =>
   api.post(`/conflicts/${conflictId}/approve`, { approvedBy, action }).then((res) => res.data);
 
+export const resetConflicts = (projectId) =>
+  api.post(`/projects/${projectId}/reset-conflicts`).then(res => res.data);
+
 export const getScenes = (projectId) =>
   api.get(`/projects/${projectId}/scenes`).then(res => res.data);
 

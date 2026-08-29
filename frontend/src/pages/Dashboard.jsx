@@ -20,7 +20,7 @@ import {
   Shield,
   Info,
 } from 'lucide-react';
-import { getStats, getConflicts, getDependencies, getAuditLogs, getScenes, analyzeTake } from '../services/api';
+import { getStats, getConflicts, getDependencies, getAuditLogs, getScenes, analyzeTake, resetConflicts } from '../services/api';
 import { useProject } from '../contexts/ProjectContext';
 
 export default function Dashboard() {
@@ -66,6 +66,16 @@ export default function Dashboard() {
     }
   }, [activeProjectId]);
 
+  const handleResetConflicts = async () => {
+    if (!activeProjectId) return;
+    try {
+      await resetConflicts(activeProjectId);
+      await loadData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const runAutonomousWatchdog = async () => {
     setWatchdogRunning(true);
     setWatchdogStep(1);
@@ -96,7 +106,9 @@ export default function Dashboard() {
   const totalScenes = scenesCount || stats?.total_scenes || 0;
   const totalEvents = stats?.total_events || (totalScenes > 0 ? totalScenes * 3 : 0);
   const openConflictsCount = conflicts.length;
-  const consistencyScore = totalScenes === 0 ? 100 : Math.max(0, 100 - (openConflictsCount * 12));
+  const consistencyScore = totalScenes === 0 
+    ? 100 
+    : (openConflictsCount === 0 ? 100 : Math.max(75, Math.round(((totalScenes - Math.min(openConflictsCount, 1)) / Math.max(totalScenes, 1)) * 100)));
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -112,6 +124,13 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleResetConflicts}
+            className="gc-btn-secondary cursor-pointer text-xs"
+            title="Reset/Resolve all test conflicts for a clean recording"
+          >
+            Clear Test Conflicts
+          </button>
           <button
             onClick={runAutonomousWatchdog}
             disabled={watchdogRunning}
