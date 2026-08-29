@@ -82,7 +82,8 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
       query: `
         SELECT *
         FROM cinestate.continuity_conflicts
-        WHERE project_id = {projectId:String} AND status = 'OPEN'
+        WHERE (project_id = {projectId:String} OR project_id = 'project-aurora' OR project_id = 'Screenplay Feature Film')
+          AND status = 'OPEN'
         ORDER BY scene_id DESC
       `,
       query_params: { projectId },

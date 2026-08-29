@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Video, Upload, Play, Sparkles, CheckCircle2, AlertTriangle, Activity, Sliders, Shield, Layers, FileVideo, Check, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Video, Upload, Play, Sparkles, CheckCircle2, AlertTriangle, Activity, Sliders, Shield, Layers, FileVideo, Check, Info, ArrowRight } from 'lucide-react';
 import { analyzeTake } from '../services/api';
 import { useProject } from '../contexts/ProjectContext';
 
 export default function Footage() {
   const { activeProjectId } = useProject();
+  const navigate = useNavigate();
   const [sceneId, setSceneId] = useState('scene_25');
   const [entityId, setEntityId] = useState('arjun');
   const [takeId, setTakeId] = useState('take_03');
@@ -233,6 +235,16 @@ export default function Footage() {
                   </div>
                 ))}
               </div>
+
+              {result.conflicts_detected > 0 && (
+                <button
+                  onClick={() => navigate('/conflicts')}
+                  className="gc-btn-primary w-full justify-center py-2.5 cursor-pointer"
+                >
+                  Review Conflict in Action Center
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
         </div>
