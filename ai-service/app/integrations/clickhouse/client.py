@@ -53,10 +53,9 @@ def _create_client() -> Client:
             username=settings.clickhouse_user,
             password=settings.clickhouse_password,
             secure=settings.clickhouse_secure,
-            connect_timeout=25,
-            send_receive_timeout=35,
-            # Verify SSL for ClickHouse Cloud
-            verify=settings.clickhouse_secure,
+            connect_timeout=35,
+            send_receive_timeout=45,
+            verify=False,
         )
         # Verify connection is alive
         result = client.command("SELECT 1")
