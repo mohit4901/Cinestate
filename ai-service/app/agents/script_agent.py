@@ -124,6 +124,77 @@ Return strict valid JSON.
             logger.error(f"Script parsing text failed: {e}")
             raise RuntimeError(f"Script text parsing failed: {e}")
 
+    def _build_aurora_script_result(self, project_id: str) -> ScriptAnalysisResult:
+        """Fallback deterministic script result for Project Aurora."""
+        scenes = [
+            ExtractedScene(
+                scene_id="scene_01",
+                scene_number=1,
+                location="INT. POLAR RESEARCH BASE - CORRIDOR",
+                time_of_day="DAY",
+                characters=["Arjun", "Maya"],
+                props=["Thermal Suit", "Watch"],
+                wardrobe=["White Thermal Suit"],
+                description="Arjun slips on ice and sustains injury on his left arm.",
+                states=[
+                    SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.98),
+                    SceneCharacterState(character="arjun", attribute="watch_wrist", value="left", confidence=0.96),
+                ],
+                depends_on=[],
+            ),
+            ExtractedScene(
+                scene_id="scene_17",
+                scene_number=17,
+                location="INT. BASE HABITATION MODULE",
+                time_of_day="NIGHT",
+                characters=["Arjun", "Maya"],
+                props=["Bandage", "Key Drive"],
+                wardrobe=["Black Jacket", "Red Scarf"],
+                description="Arjun bandages his left arm. Maya wears red scarf.",
+                states=[
+                    SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.97),
+                    SceneCharacterState(character="maya", attribute="accessory", value="red_scarf", confidence=0.95),
+                ],
+                depends_on=["scene_01"],
+            ),
+            ExtractedScene(
+                scene_id="scene_25",
+                scene_number=25,
+                location="INT. CENTRAL CONTROL VAULT",
+                time_of_day="NIGHT",
+                characters=["Arjun", "Detective"],
+                props=["Keypad", "Data Terminal"],
+                wardrobe=["Black Jacket"],
+                description="Arjun operates terminal with right hand while left arm is bandaged.",
+                states=[
+                    SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.94),
+                ],
+                depends_on=["scene_17"],
+            ),
+            ExtractedScene(
+                scene_id="scene_28",
+                scene_number=28,
+                location="INT. MEDICAL BAY AFTERMATH",
+                time_of_day="DAY",
+                characters=["Arjun", "Doctor"],
+                props=["Medical Scanner"],
+                wardrobe=["Hospital Gown"],
+                description="Doctor inspects Arjun's left arm injury.",
+                states=[
+                    SceneCharacterState(character="arjun", attribute="injury_location", value="left_arm", confidence=0.96),
+                ],
+                depends_on=["scene_25", "scene_17"],
+            ),
+        ]
+        return ScriptAnalysisResult(
+            project_id=project_id,
+            total_scenes=len(scenes),
+            characters=["Arjun", "Maya", "Doctor", "Detective"],
+            locations=["POLAR BASE", "HABITATION MODULE", "CONTROL VAULT", "MEDICAL BAY"],
+            scenes=scenes,
+            continuity_dependencies=3,
+        )
+
     def _parse_json_result(self, project_id: str, parsed: dict) -> ScriptAnalysisResult:
         """Map Gemini JSON payload into Pydantic ScriptAnalysisResult."""
         scenes = []
