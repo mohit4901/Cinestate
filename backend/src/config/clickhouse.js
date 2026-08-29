@@ -20,6 +20,9 @@ export const chClient = createClient({
   max_open_connections: 10,
   tls: isSecure ? { rejectUnauthorized: false } : undefined,
   keep_alive: { enabled: true },
+  log: {
+    level: 'ERROR',
+  },
 });
 
 export async function pingClickHouse() {
