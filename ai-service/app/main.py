@@ -262,9 +262,10 @@ async def analyze_live_frame(
                 "recommendation": rec.reasoning,
             })
 
+        state_msg = "\033[91m⚠️ DISCREPANCY DETECTED\033[0m" if conflicts else "\033[92m✅ IN CONTINUITY\033[0m"
         print(f"\n\033[1;35m[LIVE VISION SCAN]\033[0m 👁️  \033[1mFrame Analyzed:\033[0m Scene {scene_id} ({entity_id})")
         print(f"  ├─ 📦 \033[1mDetections\033[0m         : {len(raw_observations)} bounding box attribute(s)")
-        print(f"  ├─ ⚡ \033[1mState Engine\033[0m       : {'\033[91m⚠️ DISCREPANCY DETECTED\033[0m' if conflicts else '\033[92m✅ IN CONTINUITY\033[0m'}")
+        print(f"  ├─ ⚡ \033[1mState Engine\033[0m       : {state_msg}")
         if conflicts:
             print(f"  └─ 🎯 \033[1mRecommendation\033[0m     : {len(conflict_data_list)} conflict(s) surfaced in dashboard\n")
         else:
@@ -424,9 +425,10 @@ async def analyze_media(req: AnalyzeMediaRequest):
                 "recommendation": rec.reasoning,
             })
 
+        consistency_msg = "\033[91m⚠️ CONFLICT DETECTED\033[0m" if conflicts else "\033[92m✅ 100% IN CONTINUITY\033[0m"
         print(f"\n\033[1;32m[COGNITIVE STACK]\033[0m 🎬 \033[1mTake Analyzed:\033[0m {req.scene_id} / {req.take_id}")
         print(f"  ├─ 👁️  \033[1mVisual Observations\033[0m : {len(analysis.observations)} facts recorded to ClickHouse")
-        print(f"  ├─ ⚖️  \033[1mState Consistency\033[0m   : {'\033[91m⚠️ CONFLICT DETECTED\033[0m' if conflicts else '\033[92m✅ 100% IN CONTINUITY\033[0m'}")
+        print(f"  ├─ ⚖️  \033[1mState Consistency\033[0m   : {consistency_msg}")
         if conflicts:
             print(f"  └─ 🎯 \033[1mBlast Radius\033[0m        : {len(conflict_data_list)} conflict(s) computed with downstream impact\n")
         else:
