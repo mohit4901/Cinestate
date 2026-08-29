@@ -219,6 +219,29 @@ class ClickHouseRepository:
             ],
         )
 
+    def insert_scene(self, project_id: str, scene_id: str, scene_number: int, location: str, time_of_day: str = "", characters: list = None, props: list = None, wardrobe: list = None, description: str = "", depends_on: list = None) -> None:
+        """Insert a scene into ClickHouse."""
+        client = get_client()
+        client.insert(
+            "scenes",
+            [[
+                project_id,
+                scene_id,
+                int(scene_number or 0),
+                location or "UNKNOWN",
+                time_of_day or "DAY",
+                json.dumps(characters or []),
+                json.dumps(props or []),
+                json.dumps(wardrobe or []),
+                description or "",
+                json.dumps(depends_on or []),
+            ]],
+            column_names=[
+                "project_id", "scene_id", "scene_number", "location", "time_of_day",
+                "characters", "props", "wardrobe", "description", "depends_on",
+            ],
+        )
+
     def insert_audit_log(self, entry: AgentAuditEntry) -> str:
         """Write an agent action to the audit log."""
         client = get_client()

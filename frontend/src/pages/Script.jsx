@@ -50,6 +50,20 @@ export default function Script() {
   ]);
   const [result, setResult] = useState(null);
 
+  useEffect(() => {
+    const saved = localStorage.getItem(`cinestate_scenes_${activeProjectId || 'project-aurora'}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length > 0) {
+          setScenes(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to parse saved scenes', e);
+      }
+    }
+  }, [activeProjectId]);
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -77,6 +91,7 @@ export default function Script() {
         setParseStep(4);
         if (response.data?.data?.scenes?.length) {
           setScenes(response.data.data.scenes);
+          localStorage.setItem(`cinestate_scenes_${activeProjectId || 'project-aurora'}`, JSON.stringify(response.data.data.scenes));
         }
         setResult(response.data.data);
       }, 2200);
