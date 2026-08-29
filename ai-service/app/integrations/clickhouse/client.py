@@ -53,8 +53,8 @@ def _create_client() -> Client:
             username=settings.clickhouse_user,
             password=settings.clickhouse_password,
             secure=settings.clickhouse_secure,
-            connect_timeout=10,
-            send_receive_timeout=30,
+            connect_timeout=25,
+            send_receive_timeout=35,
             # Verify SSL for ClickHouse Cloud
             verify=settings.clickhouse_secure,
         )
