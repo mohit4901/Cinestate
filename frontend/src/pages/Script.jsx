@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Sparkles, Film, CheckCircle2, FileUp, Activity, Check, Info } from 'lucide-react';
+import { FileText, Upload, Sparkles, Film, CheckCircle2, FileUp, Activity, Check, Info, Trash2, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import { useProject } from '../contexts/ProjectContext';
 
@@ -16,14 +16,26 @@ export default function Script() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.length > 0) {
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
           setScenes(parsed);
+        } else {
+          setScenes([]);
         }
       } catch (e) {
-        console.error('Failed to parse saved scenes', e);
+        setScenes([]);
       }
+    } else {
+      setScenes([]);
+      setResult(null);
     }
   }, [activeProjectId]);
+
+  const handleClearScript = () => {
+    setScenes([]);
+    setResult(null);
+    setSelectedFile(null);
+    localStorage.removeItem(`cinestate_scenes_${activeProjectId || 'project-aurora'}`);
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -171,9 +183,22 @@ export default function Script() {
               <Film className="w-4 h-4 text-[#188038]" />
               Extracted Screenplay Baseline Facts ({result?.project_name || (activeProjectId ? activeProjectId.replace('project-', '').toUpperCase() : 'Screenplay')})
             </h3>
-            <span className="gc-chip-green">
-              ClickHouse Synchronized
-            </span>
+            <div className="flex items-center gap-2">
+              {scenes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearScript}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold text-[#d93025] hover:bg-[#fce8e6] border border-[#fad2cf] transition cursor-pointer"
+                  title="Remove parsed screenplay and reset view"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear / Reset Script
+                </button>
+              )}
+              <span className="gc-chip-green">
+                ClickHouse Synchronized
+              </span>
+            </div>
           </div>
 
           <div className="space-y-3 text-xs">
