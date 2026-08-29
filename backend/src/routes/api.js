@@ -120,14 +120,16 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
 
 // ── APPROVE / REJECT CONFLICT ───────────────────────────────
 router.post('/conflicts/:conflictId/approve', async (req, res) => {
-  try {
-    const { conflictId } = req.params;
-    const { approvedBy = 'Director', action = 'APPROVE' } = req.body;
+  const conflictId = req.params?.conflictId || 'conf-default';
+  const approvedBy = req.body?.approvedBy || 'Director';
+  const action = req.body?.action || 'APPROVE';
 
+  try {
     const resp = await axios.post(`${AI_SERVICE_URL}/approve-conflict`, {
       conflict_id: conflictId,
       approved_by: approvedBy,
       action: action,
+      project_id: req.body?.project_id || 'project-aurora',
     });
 
     res.json(resp.data);

@@ -290,6 +290,7 @@ class ApprovalRequest(BaseModel):
     approved_by: str
     action:      str   # "APPROVE" | "REJECT" | "REVIEW"
     notes:       Optional[str] = None
+    project_id:  Optional[str] = "project-aurora"
 
 
 class AgentResponse(BaseModel):
