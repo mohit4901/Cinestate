@@ -124,7 +124,7 @@ export default function Layout() {
                 <span className="text-[#202124] font-semibold">{activeProject ? activeProject.name : 'Loading...'}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
               </div>
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#dadce0] rounded-md shadow-lg hidden group-hover:block z-50">
+              <div className="absolute top-full left-0 mt-1 min-w-[260px] bg-white border border-[#dadce0] rounded-md shadow-lg hidden group-hover:block z-50">
                 <div className="py-1">
                   {projects.map(p => (
                     <button
