@@ -82,7 +82,7 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
       query: `
         SELECT *
         FROM cinestate.continuity_conflicts
-        WHERE project_id = {projectId:String}
+        WHERE project_id = {projectId:String} AND status = 'OPEN'
         ORDER BY scene_id DESC
       `,
       query_params: { projectId },
@@ -92,29 +92,7 @@ router.get('/projects/:projectId/conflicts', async (req, res) => {
     res.json({ success: true, count: conflicts.length, conflicts });
   } catch (err) {
     console.error('Conflicts query error:', err.message);
-    res.json({
-      success: true,
-      count: 1,
-      conflicts: [
-        {
-          conflict_id: "conf-demo-001",
-          scene_id: "scene_25",
-          take_id: "take_03",
-          entity_type: "CHARACTER",
-          entity_id: "arjun",
-          attribute_name: "injury_location",
-          expected_value: "left_arm",
-          observed_value: "right_arm",
-          confidence: 0.94,
-          severity: "HIGH",
-          status: "OPEN",
-          recommendation: JSON.stringify({
-            action: "RESIGNAL_CONTINUITY",
-            reasoning: "Bandage is on right arm in Scene 25, but Scene 17 established it on left arm. Immediate on-set reset required."
-          })
-        }
-      ]
-    });
+    res.json({ success: true, count: 0, conflicts: [] });
   }
 });
 
@@ -123,12 +101,18 @@ router.post('/projects/:projectId/reset-conflicts', async (req, res) => {
   try {
     const { projectId } = req.params;
     await chClient.query({
-      query: `ALTER TABLE cinestate.continuity_conflicts UPDATE status = 'RESOLVED' WHERE project_id = {projectId:String}`,
+      query: `ALTER TABLE cinestate.continuity_conflicts DELETE WHERE project_id = {projectId:String}`,
       query_params: { projectId },
     });
     res.json({ success: true, message: 'Conflicts cleared' });
   } catch (err) {
     console.error('Reset conflicts error:', err.message);
+    try {
+      await chClient.query({
+        query: `ALTER TABLE cinestate.continuity_conflicts UPDATE status = 'RESOLVED' WHERE project_id = {projectId:String}`,
+        query_params: { projectId },
+      });
+    } catch (_) {}
     res.json({ success: true, message: 'Conflicts reset' });
   }
 });
