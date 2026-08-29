@@ -49,28 +49,28 @@ Analyze the provided screenplay document (PDF/text) and extract:
 2. Character state facts (injuries, watches, specific clothing, hair).
 3. Continuity dependencies (which scenes depend on earlier scene states).
 
-Return strict valid JSON matching this schema:
+Return strict valid JSON matching this schema format:
 {
-  "total_scenes": 2,
-  "characters": ["Arjun", "Detective"],
-  "locations": ["INT. HOTEL ROOM", "INT. INTERROGATION ROOM"],
+  "total_scenes": 0,
+  "characters": ["<NAME_1>", "<NAME_2>"],
+  "locations": ["<LOCATION_1>", "<LOCATION_2>"],
   "scenes": [
     {
-      "scene_id": "scene_17",
-      "scene_number": 17,
-      "location": "INT. HOTEL ROOM - NIGHT",
-      "time_of_day": "NIGHT",
-      "characters": ["Arjun"],
-      "props": ["Watch"],
-      "wardrobe": ["Black jacket"],
-      "description": "Arjun tends to his LEFT ARM injury.",
+      "scene_id": "scene_01",
+      "scene_number": 1,
+      "location": "<INT_OR_EXT_LOCATION_HEADER>",
+      "time_of_day": "<DAY_OR_NIGHT_OR_DUSK>",
+      "characters": ["<CHARACTER_NAME>"],
+      "props": ["<KEY_PROP_HELD_OR_USED>"],
+      "wardrobe": ["<COSTUME_COLOR_OR_STYLE>"],
+      "description": "<SUMMARY_OF_ACTIONS_IN_SCENE>",
       "states": [
-        {"character": "arjun", "attribute": "injury_location", "value": "left_arm", "confidence": 0.98}
+        {"character": "<CHARACTER_NAME>", "attribute": "<STATE_ATTRIBUTE_E_G_INJURY_OR_JEWELRY_OR_EYE>", "value": "<EXACT_OBSERVED_VALUE>", "confidence": 0.95}
       ],
-      "depends_on": []
+      "depends_on": ["<PREVIOUS_SCENE_ID_IF_LINKED>"]
     }
   ],
-  "continuity_dependencies": 1
+  "continuity_dependencies": 0
 }
 """
 
