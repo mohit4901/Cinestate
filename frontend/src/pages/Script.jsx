@@ -8,46 +8,7 @@ export default function Script() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [parsing, setParsing] = useState(false);
   const [parseStep, setParseStep] = useState(0);
-  const [scenes, setScenes] = useState([
-    {
-      scene_id: "scene_01",
-      scene_number: 1,
-      location: "INT. POLAR RESEARCH BASE - CORRIDOR",
-      description: "Arjun and Maya discover the abandoned station. Arjun slips and severely injures his LEFT ARM.",
-      states: [
-        { character: "arjun", attribute: "injury_location", value: "left_arm", confidence: 0.98 },
-        { character: "arjun", attribute: "watch_wrist", value: "left", confidence: 0.96 }
-      ]
-    },
-    {
-      scene_id: "scene_17",
-      scene_number: 17,
-      location: "INT. BASE HABITATION MODULE - NIGHT",
-      description: "Arjun tends to his LEFT ARM injury with a sterile bandage. Maya wears distinctive RED SCARF.",
-      states: [
-        { character: "arjun", attribute: "injury_location", value: "left_arm", confidence: 0.97 },
-        { character: "maya", attribute: "accessory", value: "red_scarf", confidence: 0.95 }
-      ]
-    },
-    {
-      scene_id: "scene_25",
-      scene_number: 25,
-      location: "INT. CENTRAL CONTROL VAULT - NIGHT",
-      description: "Arjun confronts rogue AI terminal. Left arm remains heavily bandaged in tactical jacket.",
-      states: [
-        { character: "arjun", attribute: "injury_location", value: "left_arm", confidence: 0.94 }
-      ]
-    },
-    {
-      scene_id: "scene_28",
-      scene_number: 28,
-      location: "INT. MEDICAL BAY AFTERMATH - DAY",
-      description: "Chief Medical Officer inspects Arjun's left arm injury for trauma and frostbite.",
-      states: [
-        { character: "arjun", attribute: "injury_location", value: "left_arm", confidence: 0.96 }
-      ]
-    }
-  ]);
+  const [scenes, setScenes] = useState([]);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
@@ -216,26 +177,36 @@ export default function Script() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {scenes.map((sc, idx) => (
-              <div key={sc.scene_id || idx} className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[#1a73e8] font-bold text-xs">
-                    Scene {sc.scene_number || sc.scene_id}: {sc.location}
-                  </span>
-                  <span className="gc-chip-green">ESTABLISHED FACT</span>
-                </div>
-                <p className="text-xs text-[#202124] font-sans">
-                  {sc.description || `Scene ${sc.scene_id} baseline character facts.`}
+            {scenes.length === 0 ? (
+              <div className="p-12 text-center space-y-3 rounded-md bg-[#f8f9fa] border border-dashed border-[#dadce0]">
+                <FileUp className="w-10 h-10 text-[#1a73e8] mx-auto opacity-70" />
+                <div className="text-sm font-semibold text-[#202124]">Ready for Screenplay Ingestion</div>
+                <p className="text-xs text-[#5f6368] max-w-sm mx-auto">
+                  Upload a screenplay file on the left and click "Parse Script with Gemini 2.0 Flash" to extract characters, locations, and continuity baseline facts in real-time.
                 </p>
-                <div className="text-[11px] text-[#5f6368] pt-1 border-t border-[#dadce0] flex flex-wrap gap-4">
-                  {sc.states?.map((st, i) => (
-                    <span key={i}>
-                      {st.attribute} = <code className="text-[#188038] font-bold">{st.value}</code> ({(st.confidence * 100).toFixed(0)}%)
-                    </span>
-                  ))}
-                </div>
               </div>
-            ))}
+            ) : (
+              scenes.map((sc, idx) => (
+                <div key={sc.scene_id || idx} className="p-4 rounded-md bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#1a73e8] font-bold text-xs">
+                      Scene {sc.scene_number || sc.scene_id}: {sc.location}
+                    </span>
+                    <span className="gc-chip-green">ESTABLISHED FACT</span>
+                  </div>
+                  <p className="text-xs text-[#202124] font-sans">
+                    {sc.description || `Scene ${sc.scene_id} baseline character facts.`}
+                  </p>
+                  <div className="text-[11px] text-[#5f6368] pt-1 border-t border-[#dadce0] flex flex-wrap gap-4">
+                    {sc.states?.map((st, i) => (
+                      <span key={i}>
+                        {st.attribute} = <code className="text-[#188038] font-bold">{st.value}</code> ({(st.confidence * 100).toFixed(0)}%)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
