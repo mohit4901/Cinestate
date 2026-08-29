@@ -46,7 +46,13 @@ from app.models.schemas import (
 # Global Gemini Client to reuse HTTP connection pools and save latency
 agent_client = genai.Client(api_key=settings.gemini_api_key or "DUMMY")
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+# Silence noisy background logs (uvicorn access spam, httpx requests, clickhouse internals)
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(message)s")
+for name in ["uvicorn.access", "httpx", "google_genai", "app.integrations.clickhouse.repository", 
+             "app.integrations.clickhouse.client", "app.services.state_engine", "app.agents.evidence_agent",
+             "google.adk", "clickhouse_connect"]:
+    logging.getLogger(name).setLevel(logging.WARNING)
+
 logger = logging.getLogger("cinestate.ai_service")
 
 repo = ClickHouseRepository()
@@ -54,6 +60,20 @@ state_engine = StateEngine()
 evidence_agent = EvidenceAgent()
 script_agent = ScriptAgent()
 recommendation_agent = RecommendationAgent()
+
+
+def print_hud_box(title: str, subtitle: str, lines: list, color: str = "\033[1;36m"):
+    """Render a high-tech Cyberpunk Mission Control HUD box in terminal."""
+    from datetime import datetime
+    now = datetime.now().strftime("%H:%M:%S")
+    divider = "─" * 76
+    print(f"\n{color}┌── [{now}] {title} {divider[:max(0, 70 - len(title))]}┐\033[0m")
+    if subtitle:
+        print(f"│  {subtitle}")
+        print(f"{color}├{divider}┤\033[0m")
+    for l in lines:
+        print(f"│  {l}")
+    print(f"{color}└──{divider}┘\033[0m\n")
 
 
 @asynccontextmanager
@@ -262,14 +282,22 @@ async def analyze_live_frame(
                 "recommendation": rec.reasoning,
             })
 
-        state_msg = "\033[91m⚠️ DISCREPANCY DETECTED\033[0m" if conflicts else "\033[92m✅ IN CONTINUITY\033[0m"
-        print(f"\n\033[1;35m[LIVE VISION SCAN]\033[0m 👁️  \033[1mFrame Analyzed:\033[0m Scene {scene_id} ({entity_id})")
-        print(f"  ├─ 📦 \033[1mDetections\033[0m         : {len(raw_observations)} bounding box attribute(s)")
-        print(f"  ├─ ⚡ \033[1mState Engine\033[0m       : {state_msg}")
+        state_badge = "\033[1;91m🚨 DISCREPANCY INTERCEPTED\033[0m" if conflicts else "\033[1;92m✅ CONTINUITY VERIFIED\033[0m"
+        hud_lines = [
+            f"📦 \033[1mPerception Scan\033[0m   : \033[92m● {len(raw_observations)} bounding box attribute(s) classified\033[0m",
+            f"⚡ \033[1mGround-Truth Check\033[0m: {state_badge}",
+        ]
         if conflicts:
-            print(f"  └─ 🎯 \033[1mRecommendation\033[0m     : {len(conflict_data_list)} conflict(s) surfaced in dashboard\n")
+            hud_lines.append(f"🚨 \033[1mSet Alert\033[0m          : \033[91m{len(conflict_data_list)} visual anomaly flagged on set monitor\033[0m")
         else:
-            print(f"  └─ 🎯 \033[1mStatus\033[0m             : Ready for take recording\n")
+            hud_lines.append(f"🎯 \033[1mOn-Set Directive\033[0m  : \033[92mActor wardrobe and physical state match established script facts\033[0m")
+
+        print_hud_box(
+            title="👁️  LIVE CAMERA PERCEPTION SCAN",
+            subtitle=f"\033[1mScene\033[0m : \033[1;33m{scene_id}\033[0m  │  \033[1mTracked Entity\033[0m : \033[1;37m{entity_id.upper()}\033[0m  │  \033[1mFeed\033[0m : \033[92mLIVE CAMERA STREAM\033[0m",
+            lines=hud_lines,
+            color="\033[1;31m" if conflicts else "\033[1;35m",
+        )
 
         # Audit log
         repo.insert_audit_log(AgentAuditEntry(
@@ -426,14 +454,29 @@ async def analyze_media(req: AnalyzeMediaRequest):
                 "recommendation": rec.reasoning,
             })
 
-        consistency_msg = "\033[91m⚠️ CONFLICT DETECTED\033[0m" if conflicts else "\033[92m✅ 100% IN CONTINUITY\033[0m"
-        print(f"\n\033[1;32m[COGNITIVE STACK]\033[0m 🎬 \033[1mTake Analyzed:\033[0m {req.scene_id} / {req.take_id}")
-        print(f"  ├─ 👁️  \033[1mVisual Observations\033[0m : {len(analysis.observations)} facts recorded to ClickHouse")
-        print(f"  ├─ ⚖️  \033[1mState Consistency\033[0m   : {consistency_msg}")
+        status_badge = "\033[1;91m🚨 CONTINUITY DISCREPANCY DETECTED\033[0m" if conflicts else "\033[1;92m✅ 100% IN CONTINUITY (APPROVED)\033[0m"
+        hud_lines = [
+            f"👁️  \033[1mEvidenceAgent\033[0m     : \033[92m● Parsed {len(analysis.observations)} visual attribute vectors via Gemini 3.5 Flash\033[0m",
+            f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m",
+            f"⚖️  \033[1mState Engine\033[0m      : {status_badge}",
+        ]
         if conflicts:
-            print(f"  └─ 🎯 \033[1mBlast Radius\033[0m        : {len(conflict_data_list)} conflict(s) computed with downstream impact\n")
+            for i, c in enumerate(conflict_data_list, 1):
+                hud_lines.append(f"\033[1;91m[CONFLICT #{i}]\033[0m       : \033[1;37m{c['attribute_name']}\033[0m | Expected: \033[92m'{c['expected_value']}'\033[0m vs Observed: \033[91m'{c['observed_value']}'\033[0m ({c['severity']})")
+                if c.get("recommendation"):
+                    hud_lines.append(f"🎯 \033[1mAction Directive\033[0m  : \033[1;33m\"{c['recommendation'][:65]}\"\033[0m")
+            if conflict_data_list and conflict_data_list[0].get("blast_radius"):
+                affected = conflict_data_list[0]["blast_radius"].get("affected_scenes", [])
+                hud_lines.append(f"💥 \033[1mBlast Radius\033[0m      : \033[91m{len(affected)} downstream scene(s) impacted: {', '.join(affected) or 'None'}\033[0m")
         else:
-            print(f"  └─ 🎯 \033[1mResult\033[0m              : Scene is clean & approved for shoot progression\n")
+            hud_lines.append(f"🎯 \033[1mDirective\033[0m         : \033[92m\"Take is verified consistent. Safe for director shoot wrap.\"\033[0m")
+
+        print_hud_box(
+            title="🎬 MULTI-AGENT INGESTION PIPELINE",
+            subtitle=f"\033[1mTarget\033[0m : \033[1;33m{req.scene_id} / {req.take_id}\033[0m  │  \033[1mEntity\033[0m : \033[1;37m{target_entity.upper()}\033[0m  │  \033[1mEngine\033[0m : \033[94mGoogle ADK + ClickHouse\033[0m",
+            lines=hud_lines,
+            color="\033[1;31m" if conflicts else "\033[1;36m",
+        )
 
         repo.insert_audit_log(AgentAuditEntry(
             project_id=req.project_id,
