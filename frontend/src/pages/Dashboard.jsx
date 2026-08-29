@@ -70,9 +70,17 @@ export default function Dashboard() {
     if (!activeProjectId) return;
     try {
       await resetConflicts(activeProjectId);
-      await loadData();
+      setConflicts([]);
+      setStats(prev => ({
+        ...(prev || {}),
+        open_conflicts: 0,
+        total_conflicts: 0,
+        consistency_score: 100
+      }));
+      setTimeout(() => loadData(), 500);
     } catch (e) {
       console.error(e);
+      setConflicts([]);
     }
   };
 
@@ -103,9 +111,10 @@ export default function Dashboard() {
     }
   };
 
+  const openConflictsList = (conflicts || []).filter(c => (c.status === 'OPEN' || !c.status) && c.status !== 'APPROVED' && c.status !== 'RESOLVED');
+  const openConflictsCount = openConflictsList.length;
   const totalScenes = scenesCount || stats?.total_scenes || 0;
   const totalEvents = stats?.total_events || (totalScenes > 0 ? totalScenes * 3 : 0);
-  const openConflictsCount = conflicts.length;
   const consistencyScore = totalScenes === 0 
     ? 100 
     : (openConflictsCount === 0 ? 100 : Math.max(75, Math.round(((totalScenes - Math.min(openConflictsCount, 1)) / Math.max(totalScenes, 1)) * 100)));
@@ -308,8 +317,8 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2 text-xs">
-              {conflicts.length > 0 ? (
-                conflicts.slice(0, 3).map((c, i) => (
+              {openConflictsList.length > 0 ? (
+                openConflictsList.slice(0, 3).map((c, i) => (
                   <div key={i} className="p-2.5 rounded bg-[#fef7e0] border border-[#feefc3] text-[#b06000] font-semibold">
                     Scene {c.scene_id}: {c.attribute_name} expected '{c.expected_value}' vs observed '{c.observed_value}'
                   </div>

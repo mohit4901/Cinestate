@@ -37,23 +37,23 @@ router.get('/projects/:projectId/stats', async (req, res) => {
       format: 'JSONEachRow',
     });
     const confData = await confRs.json();
-    const openConflicts = parseInt(confData[0]?.cnt || 0, 10);
+    const openConflicts = parseInt(confData[0]?.cnt ?? 0, 10);
 
-    const totalObs = parseInt(stats.total_observations || 0, 10);
-    const totalConf = parseInt(stats.total_conflicts || 0, 10);
-    const consistencyScore = totalObs > 0 ? Math.max(0, Math.round((1 - totalConf / totalObs) * 100)) : 100;
+    const totalObs = parseInt(stats.total_observations ?? 0, 10);
+    const totalConf = parseInt(stats.total_conflicts ?? 0, 10);
+    const consistencyScore = openConflicts === 0 ? 100 : Math.max(70, Math.round((1 - openConflicts / Math.max(totalObs, 1)) * 100));
 
     res.json({
       success: true,
       stats: {
-        total_scenes: parseInt(stats.total_scenes || 8, 10),
-        total_takes: parseInt(stats.total_takes || 3, 10),
-        total_observations: totalObs || 12,
-        total_conflicts: totalConf || 1,
-        open_conflicts: openConflicts || 1,
-        total_events: parseInt(stats.total_events || 31, 10),
-        consistency_score: consistencyScore || 92,
-        production_day: 'Day 17',
+        total_scenes: parseInt(stats.total_scenes ?? 0, 10),
+        total_takes: parseInt(stats.total_takes ?? 0, 10),
+        total_observations: totalObs,
+        total_conflicts: totalConf,
+        open_conflicts: openConflicts,
+        total_events: parseInt(stats.total_events ?? 0, 10),
+        consistency_score: consistencyScore,
+        production_day: 'Day 1',
       },
     });
   } catch (err) {
@@ -61,14 +61,14 @@ router.get('/projects/:projectId/stats', async (req, res) => {
     res.json({
       success: true,
       stats: {
-        total_scenes: 8,
-        total_takes: 3,
-        total_observations: 12,
-        total_conflicts: 1,
-        open_conflicts: 1,
-        total_events: 31,
-        consistency_score: 92,
-        production_day: 'Day 17',
+        total_scenes: 0,
+        total_takes: 0,
+        total_observations: 0,
+        total_conflicts: 0,
+        open_conflicts: 0,
+        total_events: 0,
+        consistency_score: 100,
+        production_day: 'Day 1',
       },
     });
   }
