@@ -157,6 +157,7 @@ Return strict valid JSON.
             )
         return ScriptAnalysisResult(
             project_id=project_id,
+            project_name=parsed.get("project_name", "Screenplay Feature Film"),
             total_scenes=len(scenes),
             characters=parsed.get("characters", []),
             locations=parsed.get("locations", []),

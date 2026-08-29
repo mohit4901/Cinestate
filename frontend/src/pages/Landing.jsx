@@ -257,8 +257,20 @@ export default function Landing() {
 
     }, containerRef);
 
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      ScrollTrigger.getAll().forEach(t => t.kill());
+      window.scrollTo(0, 0);
+      document.body.style.overflow = "auto";
+    };
   }, []);
+
+  const handleNavigate = (path) => {
+    ScrollTrigger.getAll().forEach(t => t.kill());
+    window.scrollTo(0, 0);
+    document.body.style.overflow = "auto";
+    navigate(path);
+  };
 
   return (
     <div
@@ -296,7 +308,7 @@ export default function Landing() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => handleNavigate('/dashboard')}
             className="btn-modern-light flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-sm shadow-lg cursor-pointer"
           >
             <Zap className="w-5 h-5 fill-white" />
@@ -304,7 +316,7 @@ export default function Landing() {
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigate('/live-monitor')}
+            onClick={() => handleNavigate('/live-monitor')}
             className="btn-modern-dark flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-sm cursor-pointer"
           >
             <Camera className="w-5 h-5 text-[#1a73e8]" />

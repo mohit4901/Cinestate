@@ -338,6 +338,12 @@ async def analyze_script(
         else:
             result = script_agent.analyze_script_text(target_project, "")
 
+        if getattr(result, "project_name", None):
+            try:
+                repo.insert_project(target_project, result.project_name, f"Parsed screenplay for {result.project_name}")
+            except Exception as e:
+                logger.warning(f"Failed to auto-register project: {e}")
+
         for scene in result.scenes:
             try:
                 repo.insert_scene(

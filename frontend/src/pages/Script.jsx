@@ -169,7 +169,7 @@ export default function Script() {
           <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
             <h3 className="text-sm font-semibold text-[#202124] flex items-center gap-2">
               <Film className="w-4 h-4 text-[#188038]" />
-              Extracted Screenplay Baseline Facts (Project Aurora)
+              Extracted Screenplay Baseline Facts ({result?.project_name || (activeProjectId ? activeProjectId.replace('project-', '').toUpperCase() : 'Screenplay')})
             </h3>
             <span className="gc-chip-green">
               ClickHouse Synchronized

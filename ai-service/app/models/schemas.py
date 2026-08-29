@@ -255,11 +255,12 @@ class ExtractedScene(BaseModel):
 
 class ScriptAnalysisResult(BaseModel):
     project_id:     str
+    project_name:   Optional[str] = None
     total_scenes:   int
     characters:     list[str]
     locations:      list[str]
     scenes:         list[ExtractedScene]
-    continuity_dependencies: int
+    continuity_dependencies: int = 0
 
 
 # API Request/Response
