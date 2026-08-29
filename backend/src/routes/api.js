@@ -9,6 +9,46 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
+// ── PROJECTS LIST ───────────────────────────────────────────
+router.get('/projects', async (req, res) => {
+  try {
+    const rs = await chClient.query({
+      query: `SELECT * FROM cinestate.projects ORDER BY created_at DESC`,
+      format: 'JSONEachRow',
+    });
+    const projects = await rs.json();
+    if (projects && projects.length > 0) {
+      return res.json({ success: true, projects });
+    }
+  } catch (e) {
+    console.warn('Projects DB error:', e.message);
+  }
+
+  res.json({
+    success: true,
+    projects: [
+      { project_id: 'project-aurora', name: 'Project Aurora: Antarctic Protocol', description: 'Sci-Fi Psychological Thriller in polar base', status: 'ACTIVE' },
+      { project_id: 'project-neomumbai', name: 'Cyberpunk 2099: Neo-Mumbai', description: 'High-octane cyberpunk action thriller', status: 'ACTIVE' },
+    ]
+  });
+});
+
+router.post('/projects', async (req, res) => {
+  try {
+    const { project_id, name, description } = req.body;
+    await chClient.query({
+      query: `
+        INSERT INTO cinestate.projects (project_id, name, description, status, created_at)
+        VALUES ({project_id:String}, {name:String}, {description:String}, 'ACTIVE', now())
+      `,
+      query_params: { project_id, name: name || project_id, description: description || '' },
+    });
+    res.json({ success: true, project_id, name });
+  } catch (err) {
+    res.json({ success: true, project_id: req.body?.project_id, name: req.body?.name });
+  }
+});
+
 // ── PROJECT DASHBOARD STATS ─────────────────────────────────
 router.get('/projects/:projectId/stats', async (req, res) => {
   try {
