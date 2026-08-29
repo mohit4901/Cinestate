@@ -438,13 +438,31 @@ class ClickHouseRepository:
             return [
                 {
                     "project_id": "project-aurora",
-                    "name": "Project Aurora",
-                    "description": "Cyberpunk Continuity Feature Film",
+                    "name": "Project Aurora: Antarctic Protocol",
+                    "description": "Sci-Fi Psychological Thriller in polar research station",
                     "production_day": "Day 17",
                     "status": "ACTIVE",
                     "created_by": "Director Nolan",
-                    "metadata": "{}",
-                }
+                    "metadata": '{"genre": "Sci-Fi Thriller", "director": "Christopher Nolan"}',
+                },
+                {
+                    "project_id": "project-neomumbai",
+                    "name": "Cyberpunk 2099: Neo-Mumbai",
+                    "description": "High-octane neo-noir cyberpunk action thriller",
+                    "production_day": "Day 08",
+                    "status": "ACTIVE",
+                    "created_by": "Director Denis",
+                    "metadata": '{"genre": "Cyberpunk Action", "director": "Denis Villeneuve"}',
+                },
+                {
+                    "project_id": "project-jaipur",
+                    "name": "Royal Chronicles: Jaipur 1920",
+                    "description": "Grand period drama tracking royal dynasty and heirlooms",
+                    "production_day": "Day 24",
+                    "status": "ACTIVE",
+                    "created_by": "Director Bhansali",
+                    "metadata": '{"genre": "Period Drama", "director": "Sanjay Leela Bhansali"}',
+                },
             ]
 
     def insert_project(self, project_id: str, name: str, description: str = "") -> None:

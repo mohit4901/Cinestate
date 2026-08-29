@@ -45,16 +45,29 @@ def seed():
         client.command(f"DELETE FROM agent_audit_log WHERE project_id='{PROJECT_ID}'")
         print("🧹 Cleared existing demo data")
 
-        # ── 1. Project ────────────────────────────────────────────
-        client.insert("projects", [[
-            PROJECT_ID, "Project Aurora",
-            "A psychological thriller set in a remote research station in Antarctica.",
-            "Day 17", "ACTIVE", "demo",
-            json.dumps({"genre": "Thriller", "director": "Demo Director",
-                        "production_company": "Aurora Films"}),
-        ]], column_names=["project_id","name","description","production_day",
-                          "status","created_by","metadata"])
-        print("✅ Project Aurora created")
+        # ── 1. Projects ───────────────────────────────────────────
+        all_projects = [
+            [
+                "project-aurora", "Project Aurora: Antarctic Protocol",
+                "A psychological sci-fi thriller set in a remote polar research station.",
+                "Day 17", "ACTIVE", "Director Nolan",
+                json.dumps({"genre": "Sci-Fi Thriller", "lead_cast": "Arjun Kapoor, Maya Sen", "director": "Christopher Nolan"}),
+            ],
+            [
+                "project-neomumbai", "Cyberpunk 2099: Neo-Mumbai",
+                "High-octane neo-noir cyberpunk action thriller with cybernetic augments.",
+                "Day 08", "ACTIVE", "Director Denis",
+                json.dumps({"genre": "Cyberpunk Action", "lead_cast": "Vikram Roy, Tara Mehta", "director": "Denis Villeneuve"}),
+            ],
+            [
+                "project-jaipur", "Royal Chronicles: Jaipur 1920",
+                "Grand period drama tracking the lineage and jewels of the royal dynasty.",
+                "Day 24", "ACTIVE", "Director Bhansali",
+                json.dumps({"genre": "Period Drama", "lead_cast": "Maharaja Jai Singh, Rani Meera", "director": "Sanjay Leela Bhansali"}),
+            ],
+        ]
+        client.insert("projects", all_projects, column_names=["project_id","name","description","production_day","status","created_by","metadata"])
+        print(f"✅ {len(all_projects)} movie projects created")
 
         # ── 2. Scenes ─────────────────────────────────────────────
         scenes_data = [
@@ -89,6 +102,28 @@ def seed():
             (PROJECT_ID,"scene_31",31,"INT. COURTROOM","DAY",
              '["Arjun","Lawyer","Judge"]','["Evidence photos"]','["Suit","Sling"]',
              "Injury evidence presented in court — photos reference Scene 17 arm.",'["scene_17","scene_25","scene_28"]'),
+
+            # ── Project 2: Cyberpunk 2099 Scenes ─────────────────────
+            ("project-neomumbai","scene_04",4,"EXT. NEON MARKET - NIGHT","NIGHT",
+             '["Vikram","Tara"]','["Plasma pistol","Holopad"]','["Black duster trenchcoat","Tactical vest"]',
+             "Vikram hunts rogue android. Left cybernetic eye glowing cyan.",'[]'),
+
+            ("project-neomumbai","scene_12",12,"INT. UNDERGROUND SAFE-HAVEN","NIGHT",
+             '["Vikram","Fixer"]','["Cypher Drive"]','["Black duster trenchcoat"]',
+             "Fixer transfers bounty credits. Vikram inspects Left Cybernetic Eye.",'["scene_04"]'),
+
+            ("project-neomumbai","scene_18",18,"EXT. FLYING HIGHWAY PURSUIT","DAWN",
+             '["Vikram","Tara"]','["EMP Grenade"]','["Black duster trenchcoat"]',
+             "High speed hovercar shootout. Tara draws plasma pistol from Left Holster.",'["scene_12"]'),
+
+            # ── Project 3: Royal Chronicles Scenes ───────────────────
+            ("project-jaipur","scene_02",2,"INT. JAIPUR PALACE - DURBAR HALL","DAY",
+             '["Maharaja Jai Singh","Rani Meera"]','["Scepter","Scrolls"]','["Royal Sherwani","Emerald Haar"]',
+             "Coronation ceremony. Maharaja wears family Emerald Haar on chest.",'[]'),
+
+            ("project-jaipur","scene_07",7,"EXT. PALACE COURTYARD","DUSK",
+             '["Maharaja Jai Singh","British Envoy"]','["Treaty Document","Gold Pocket Watch"]','["Silk Angrakha"]',
+             "Treaty signing. Gold pocket watch held in right hand.",'["scene_02"]'),
         ]
 
         client.insert("scenes", scenes_data,
