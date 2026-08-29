@@ -341,6 +341,7 @@ async def analyze_script(
 @app.post("/analyze-media")
 async def analyze_media(req: AnalyzeMediaRequest):
     try:
+        target_entity = req.entity_id or "arjun"
         analysis = evidence_agent.analyze_take(
             scene_id=req.scene_id,
             take_id=req.take_id,
@@ -351,14 +352,14 @@ async def analyze_media(req: AnalyzeMediaRequest):
             project_id=req.project_id,
             scene_id=req.scene_id,
             take_id=req.take_id,
-            entity_id=req.entity_id,
+            entity_id=target_entity,
             entity_type=EntityType.CHARACTER,
             observations=analysis.observations,
         )
 
         historical_state = state_engine.get_established_state(
             project_id=req.project_id,
-            entity_id=req.entity_id,
+            entity_id=target_entity,
             as_of_scene=req.scene_id,
         )
         if not historical_state:
@@ -385,7 +386,7 @@ async def analyze_media(req: AnalyzeMediaRequest):
 
             rec = recommendation_agent.generate_recommendation(
                 conflict_scene=req.scene_id,
-                entity_id=req.entity_id,
+                entity_id=target_entity,
                 attribute_name=conf.attribute_name,
                 expected=conf.expected_value,
                 observed=conf.observed_value,
@@ -400,7 +401,7 @@ async def analyze_media(req: AnalyzeMediaRequest):
                         scene_id=req.scene_id,
                         take_id=req.take_id,
                         entity_type=EntityType.CHARACTER,
-                        entity_id=req.entity_id,
+                        entity_id=target_entity,
                         attribute_name=conf.attribute_name,
                         expected_value=conf.expected_value,
                         observed_value=conf.observed_value,

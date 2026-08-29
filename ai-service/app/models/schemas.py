@@ -274,7 +274,8 @@ class AnalyzeMediaRequest(BaseModel):
     project_id: str
     scene_id:   str
     take_id:    str
-    file_path:  str
+    file_path:  Optional[str] = ""
+    entity_id:  Optional[str] = "arjun"
 
 
 class ConflictCheckRequest(BaseModel):
