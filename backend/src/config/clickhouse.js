@@ -16,7 +16,8 @@ export const chClient = createClient({
   username: process.env.CLICKHOUSE_USER || 'default',
   password: process.env.CLICKHOUSE_PASSWORD || '',
   database: process.env.CLICKHOUSE_DATABASE || 'cinestate',
-  request_timeout: 30000,
+  request_timeout: 10000,
+  tls: isSecure ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function pingClickHouse() {

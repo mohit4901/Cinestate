@@ -32,6 +32,15 @@ class EventType(str, Enum):
     APPROVAL_GRANTED      = "APPROVAL_GRANTED"
     ACTION_EXECUTED       = "ACTION_EXECUTED"
 
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            val_upper = value.upper()
+            for member in cls:
+                if member.value == val_upper:
+                    return member
+        return cls.VIDEO_OBSERVATION
+
 
 class EntityType(str, Enum):
     CHARACTER = "CHARACTER"
@@ -41,11 +50,29 @@ class EntityType(str, Enum):
     SCENE     = "SCENE"
     ACCESSORY = "ACCESSORY"
 
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            val_upper = value.upper()
+            for member in cls:
+                if member.value == val_upper:
+                    return member
+        return cls.CHARACTER
+
 
 class Severity(str, Enum):
     HIGH   = "HIGH"
     MEDIUM = "MEDIUM"
     LOW    = "LOW"
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            val_upper = value.upper()
+            for member in cls:
+                if member.value == val_upper:
+                    return member
+        return cls.MEDIUM
 
 
 class ConflictStatus(str, Enum):
@@ -53,6 +80,15 @@ class ConflictStatus(str, Enum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     RESOLVED = "RESOLVED"
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            val_upper = value.upper()
+            for member in cls:
+                if member.value == val_upper:
+                    return member
+        return cls.OPEN
 
 
 # Production Event

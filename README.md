@@ -1,4 +1,4 @@
-# 🎬 CINESTATE: Autonomous Production Memory & Intelligence Platform
+  # 🎬 CINESTATE: Autonomous Production Memory & Intelligence Platform
 
 ![CINESTATE](https://raw.githubusercontent.com/google/material-design-icons/master/png/action/visibility/materialicons/24dp/2x/baseline_visibility_black_24dp.png)
 
