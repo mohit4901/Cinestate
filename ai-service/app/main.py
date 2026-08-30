@@ -509,10 +509,13 @@ async def analyze_media_upload(
         status_badge = "\033[1;91m🚨 CONTINUITY DISCREPANCY DETECTED\033[0m" if conflicts else "\033[1;92m✅ 100% IN CONTINUITY (APPROVED)\033[0m"
         hud_lines = [
             f"🎬 \033[1mScene Action\033[0m     : \033[1;37m\"{analysis.raw_description[:65]}...\"\033[0m",
-            f"👁️  \033[1mEvidenceAgent\033[0m     : \033[92m● Parsed {len(analysis.observations)} visual facts from actual uploaded media\033[0m",
-            f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m",
-            f"⚖️  \033[1mState Engine\033[0m      : {status_badge}",
+            f"👁️  \033[1mEvidenceAgent\033[0m    : \033[92m● Parsed {len(analysis.observations)} visual facts from actual uploaded media\033[0m",
         ]
+        for obs in analysis.observations[:3]:
+            hud_lines.append(f"🔍 \033[1m[FACT]\033[0m           : \033[1;36m{obs.entity_id}.{obs.attribute_name}\033[0m = \033[1;32m'{obs.value}'\033[0m ({(obs.confidence*100):.0f}%)")
+        hud_lines.append(f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m")
+        hud_lines.append(f"⚖️  \033[1mState Engine\033[0m      : {status_badge}")
+
         if conflicts:
             for i, c in enumerate(conflict_data_list, 1):
                 hud_lines.append(f"\033[1;91m[CONFLICT #{i}]\033[0m       : \033[1;37m{c['attribute_name']}\033[0m | Expected: \033[92m'{c['expected_value']}'\033[0m vs Observed: \033[91m'{c['observed_value']}'\033[0m")

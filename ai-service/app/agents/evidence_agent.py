@@ -180,7 +180,20 @@ Return the JSON object containing scene_description and the observations array.
             contents = [prompt]
             if media_bytes and len(media_bytes) > 100:
                 eff_mime = mime_type if mime_type in ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"] else "video/mp4"
-                contents.append(types.Part.from_bytes(data=media_bytes, mime_type=eff_mime))
+                try:
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(suffix=".mp4" if "video" in eff_mime else ".jpg", delete=False) as f:
+                        f.write(media_bytes)
+                        temp_path = f.name
+                    uploaded_file = self.client.files.upload(file=temp_path)
+                    contents.append(uploaded_file)
+                    try:
+                        os.remove(temp_path)
+                    except Exception:
+                        pass
+                except Exception as file_err:
+                    logger.warning(f"File upload fallback to bytes part: {file_err}")
+                    contents.append(types.Part.from_bytes(data=media_bytes, mime_type=eff_mime))
 
             response = self.client.models.generate_content(
                 model=self.model,
