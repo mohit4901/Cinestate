@@ -217,20 +217,22 @@ export default function Footage() {
               </div>
             </div>
 
-            {/* Take 3 (Conflict Take) */}
+            {/* Take 3 (Conflict Take / Custom Upload) */}
             <div className="space-y-2">
               <div className="text-xs font-semibold text-[#d93025] flex items-center justify-between">
-                <span>TAKE 3 (CURRENT ANALYSIS)</span>
-                <span className="gc-chip-red">CONFLICT</span>
+                <span>{selectedFile ? `CUSTOM MEDIA: ${selectedFile.name.slice(0, 20)}...` : 'TAKE 3 (CURRENT ANALYSIS)'}</span>
+                <span className="gc-chip-red">{result?.conflicts_detected > 0 ? 'CONFLICT' : 'EVIDENCE INGESTED'}</span>
               </div>
               <div className="aspect-video rounded bg-[#202124] relative overflow-hidden flex items-center justify-center shadow-xs">
                 <div className="absolute inset-10 border-2 border-[#d93025] rounded bg-[#d93025]/20 flex items-start justify-end p-2 animate-pulse">
                   <span className="bg-[#d93025] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                    {entityId === 'vikram' ? 'RIGHT OCULAR IMPLANT @ 00:08.5 (98%)' : 'RIGHT ARM INJURY @ 00:12.8 (93%)'}
+                    {result?.observations?.[0] 
+                      ? `${result.observations[0].attribute_name.toUpperCase()} = ${result.observations[0].value.toUpperCase()} (${(result.observations[0].confidence * 100).toFixed(0)}%)` 
+                      : (entityId === 'vikram' ? 'RIGHT OCULAR IMPLANT @ 00:08.5 (98%)' : 'RIGHT ARM INJURY @ 00:12.8 (93%)')}
                   </span>
                 </div>
                 <div className="relative z-10 text-center text-xs text-white">
-                  {entityId === 'vikram' ? 'Scene 18 / Take 3 (Vikram)' : 'Scene 25 / Take 3 (Arjun)'}
+                  {selectedFile ? `File: ${selectedFile.name}` : (entityId === 'vikram' ? 'Scene 18 / Take 3 (Vikram)' : 'Scene 25 / Take 3 (Arjun)')}
                 </div>
               </div>
             </div>
@@ -257,14 +259,14 @@ export default function Footage() {
                 </span>
               </div>
 
-              {result.scene_description && (
+              {(result.scene_description || result.raw_description) && (
                 <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] space-y-1.5 text-xs">
                   <div className="flex items-center gap-1.5 text-[#1a73e8] font-semibold uppercase text-[10px] tracking-wider">
                     <Sparkles className="w-3.5 h-3.5" />
                     Gemini Multimodal Scene Breakdown
                   </div>
                   <p className="text-[#202124] leading-relaxed font-sans text-xs font-medium">
-                    {result.scene_description}
+                    {result.scene_description || result.raw_description}
                   </p>
                 </div>
               )}

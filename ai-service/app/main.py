@@ -505,8 +505,10 @@ async def analyze_media_upload(
                 "recommendation": rec.reasoning,
             })
 
+        primary_entity = analysis.observations[0].entity_id.upper() if analysis.observations else entity_id.upper()
         status_badge = "\033[1;91m🚨 CONTINUITY DISCREPANCY DETECTED\033[0m" if conflicts else "\033[1;92m✅ 100% IN CONTINUITY (APPROVED)\033[0m"
         hud_lines = [
+            f"🎬 \033[1mScene Action\033[0m     : \033[1;37m\"{analysis.raw_description[:65]}...\"\033[0m",
             f"👁️  \033[1mEvidenceAgent\033[0m     : \033[92m● Parsed {len(analysis.observations)} visual facts from actual uploaded media\033[0m",
             f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m",
             f"⚖️  \033[1mState Engine\033[0m      : {status_badge}",
@@ -516,7 +518,7 @@ async def analyze_media_upload(
                 hud_lines.append(f"\033[1;91m[CONFLICT #{i}]\033[0m       : \033[1;37m{c['attribute_name']}\033[0m | Expected: \033[92m'{c['expected_value']}'\033[0m vs Observed: \033[91m'{c['observed_value']}'\033[0m")
         print_hud_box(
             title="🎬 REAL MULTIMODAL FOOTAGE INGESTION",
-            subtitle=f"\033[1mTarget\033[0m : \033[1;33m{scene_id} / {take_id}\033[0m  │  \033[1mFile\033[0m : \033[1;37m{filename}\033[0m",
+            subtitle=f"\033[1mTarget\033[0m : \033[1;33m{scene_id} / {take_id}\033[0m  │  \033[1mEntity\033[0m : \033[1;36m{primary_entity}\033[0m  │  \033[1mFile\033[0m : \033[1;37m{filename}\033[0m",
             lines=hud_lines,
             color="\033[1;31m" if conflicts else "\033[1;32m",
         )
