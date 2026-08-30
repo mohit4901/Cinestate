@@ -664,12 +664,17 @@ async def analyze_media(req: AnalyzeMediaRequest):
                 "recommendation": rec.reasoning,
             })
 
+        primary_entity = analysis.observations[0].entity_id.upper() if analysis.observations else target_entity.upper()
         status_badge = "\033[1;91m🚨 CONTINUITY DISCREPANCY DETECTED\033[0m" if conflicts else "\033[1;92m✅ 100% IN CONTINUITY (APPROVED)\033[0m"
         hud_lines = [
-            f"👁️  \033[1mEvidenceAgent\033[0m     : \033[92m● Parsed {len(analysis.observations)} visual attribute vectors via Gemini 3.5 Flash\033[0m",
-            f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m",
-            f"⚖️  \033[1mState Engine\033[0m      : {status_badge}",
+            f"🧠 \033[1mGemini Multimodal\033[0m : \033[1;92m● Live Gemini 3.5 Flash Vision Ingestion ({analysis.processing_ms}ms)\033[0m",
+            f"🎬 \033[1mScene Action\033[0m      : \033[1;37m\"{analysis.raw_description[:65]}...\"\033[0m",
+            f"👁️  \033[1mEvidenceAgent\033[0m     : \033[92m● Extracted {len(analysis.observations)} visual attribute vectors\033[0m",
         ]
+        for obs in analysis.observations[:4]:
+            hud_lines.append(f"🔍 \033[1m[FACT]\033[0m            : \033[1;36m{obs.entity_id}.{obs.attribute_name}\033[0m = \033[1;32m'{obs.value}'\033[0m ({(obs.confidence*100):.0f}%)")
+        hud_lines.append(f"⚡ \033[1mClickHouse Memory\033[0m : \033[92m● Synchronized & committed to persistent cloud ledger\033[0m")
+        hud_lines.append(f"⚖️  \033[1mState Engine\033[0m      : {status_badge}")
         if conflicts:
             for i, c in enumerate(conflict_data_list, 1):
                 hud_lines.append(f"\033[1;91m[CONFLICT #{i}]\033[0m       : \033[1;37m{c['attribute_name']}\033[0m | Expected: \033[92m'{c['expected_value']}'\033[0m vs Observed: \033[91m'{c['observed_value']}'\033[0m ({c['severity']})")
@@ -683,7 +688,7 @@ async def analyze_media(req: AnalyzeMediaRequest):
 
         print_hud_box(
             title="🎬 MULTI-AGENT INGESTION PIPELINE",
-            subtitle=f"\033[1mTarget\033[0m : \033[1;33m{req.scene_id} / {req.take_id}\033[0m  │  \033[1mEntity\033[0m : \033[1;37m{target_entity.upper()}\033[0m  │  \033[1mEngine\033[0m : \033[94mGoogle ADK + ClickHouse\033[0m",
+            subtitle=f"\033[1mTarget\033[0m : \033[1;33m{req.scene_id} / {req.take_id}\033[0m  │  \033[1mEntity\033[0m : \033[1;36m{primary_entity}\033[0m  │  \033[1mEngine\033[0m : \033[94mGoogle ADK + Gemini 3.5 Flash\033[0m",
             lines=hud_lines,
             color="\033[1;31m" if conflicts else "\033[1;36m",
         )
