@@ -414,8 +414,24 @@ router.post('/analyze-live-frame', upload.single('file'), async (req, res) => {
   }
 });
 
-router.post('/analyze-take', async (req, res) => {
+router.post('/analyze-take', upload.single('file'), async (req, res) => {
   try {
+    if (req.file) {
+      const formData = new FormData();
+      formData.append('project_id', req.body.project_id || 'project-aurora');
+      formData.append('scene_id', req.body.scene_id || 'scene_25');
+      formData.append('take_id', req.body.take_id || 'take_03');
+      formData.append('entity_id', req.body.entity_id || 'arjun');
+      formData.append('file', req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype || 'video/mp4',
+      });
+      const resp = await axios.post(`${AI_SERVICE_URL}/analyze-media-upload`, formData, {
+        headers: formData.getHeaders(),
+      });
+      return res.json(resp.data);
+    }
+
     const payload = {
       project_id: req.body?.project_id || req.body?.projectId || 'project-aurora',
       scene_id: req.body?.scene_id || req.body?.sceneId || 'scene_25',

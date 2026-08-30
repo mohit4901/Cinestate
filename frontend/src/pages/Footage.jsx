@@ -30,13 +30,24 @@ export default function Footage() {
     setTimeout(() => setStep(3), 1600);
 
     try {
-      const res = await analyzeTake({
-        project_id: activeProjectId,
-        scene_id: sceneId,
-        entity_id: entityId,
-        take_id: takeId,
-        file_path: selectedFile ? selectedFile.name : './uploads/scene_25_take3.mp4',
-      });
+      let res;
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('project_id', activeProjectId || 'project-aurora');
+        formData.append('scene_id', sceneId);
+        formData.append('entity_id', entityId);
+        formData.append('take_id', takeId);
+        formData.append('file', selectedFile);
+        res = await analyzeTake(formData);
+      } else {
+        res = await analyzeTake({
+          project_id: activeProjectId || 'project-aurora',
+          scene_id: sceneId,
+          entity_id: entityId,
+          take_id: takeId,
+          file_path: './uploads/scene_25_take3.mp4',
+        });
+      }
       setTimeout(() => {
         setStep(4);
         setResult(res);
