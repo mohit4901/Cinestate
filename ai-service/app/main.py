@@ -40,7 +40,7 @@ from app.agents.orchestrator import check_continuity, run_agent_query
 from app.models.schemas import (
     AnalyzeMediaRequest, ConflictCheckRequest, ApprovalRequest,
     ProductionEvent, EventType, EntityType, AgentAuditEntry, VisualObservation,
-    ContinuityConflict, Severity,
+    ContinuityConflict, Severity, ConflictResult,
 )
 
 # Global Gemini Client to reuse HTTP connection pools and save latency
