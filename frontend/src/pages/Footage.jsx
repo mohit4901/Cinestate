@@ -255,6 +255,8 @@ export default function Footage() {
                     </span>
                   )}
                 </span>
+              </div>
+
               {result.scene_description && (
                 <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] space-y-1.5 text-xs">
                   <div className="flex items-center gap-1.5 text-[#1a73e8] font-semibold uppercase text-[10px] tracking-wider">
