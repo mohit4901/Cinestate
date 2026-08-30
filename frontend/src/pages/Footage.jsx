@@ -255,7 +255,17 @@ export default function Footage() {
                     </span>
                   )}
                 </span>
-              </div>
+              {result.scene_description && (
+                <div className="p-4 rounded-md bg-[#e8f0fe] border border-[#d2e3fc] space-y-1.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-[#1a73e8] font-semibold uppercase text-[10px] tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Gemini Multimodal Scene Breakdown
+                  </div>
+                  <p className="text-[#202124] leading-relaxed font-sans text-xs font-medium">
+                    {result.scene_description}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 {result.observations.map((obs, idx) => (

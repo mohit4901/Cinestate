@@ -525,6 +525,7 @@ async def analyze_media_upload(
             "success": True,
             "scene_id": scene_id,
             "take_id": take_id,
+            "scene_description": analysis.raw_description,
             "conflicts_detected": len(conflicts),
             "observations": [
                 {

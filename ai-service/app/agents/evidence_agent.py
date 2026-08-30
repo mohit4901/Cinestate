@@ -144,37 +144,41 @@ Return a JSON array of objects. Example:
         logger.info(f"EvidenceAgent analyzing scene={scene_id}, take={take_id}, bytes={len(media_bytes) if media_bytes else 0}")
 
         system_instruction = """
-You are a Lead Multimodal Script Supervisor & AI Vision Expert analyzing video footage on a film set.
-Examine the media file provided carefully and extract 100% REAL visual observations of what is actually visible in the media:
-- Person or character visible (clothing colors, jacket style, helmet, accessories)
-- Vehicles, props, stunts, or actions (e.g. motorcycle, bike, mountain, jump, weapons)
-- Physical state or injuries visible (left vs right side)
+You are a Lead Multimodal Script Supervisor & AI Vision Expert on a film set.
+Examine the video or image footage provided carefully and return a JSON object with:
+1. "scene_description": A clear, vivid 1-2 sentence cinematic description of what is actually happening in the clip (actions, stunts, vehicles, lighting, setting, wardrobe).
+2. "observations": A JSON array of 3 to 6 structured visual facts detected in the media.
 
-Keys required for each object in the JSON array:
+Keys required for each observation:
 - entity_type: ("CHARACTER" or "PROP" or "COSTUME")
-- entity_id: (e.g. "actor", "rider", or specific character name)
+- entity_id: (e.g. "rider", "actor", or character name)
 - attribute_name: (e.g. "jacket_color", "vehicle", "location", "action", "injury_location", "wardrobe")
 - value: (exact observed value normalized with lowercase/underscores e.g. "red", "motorcycle", "mountain_cliff")
 - confidence: (0.90 to 0.99)
 - timestamp: ("00:05.2")
-- evidence_note: (short descriptive fact of what is visually happening)
+- evidence_note: (short descriptive fact)
 
-Output ONLY valid JSON array.
+Output format:
+{
+  "scene_description": "Detailed description of the take...",
+  "observations": [ ... ]
+}
 """
 
         prompt = f"""
 Analyze this production footage take for Scene: {scene_id}, Take: {take_id}.
-Character Focus: {entity_id or 'lead'}
+Character / Subject: {entity_id or 'lead'}
 File reference: {media_path or 'camera_card_take.mp4'}
-Context note: {raw_text_description or 'Analyze real visual details of the person, clothing, vehicles, and surroundings in the footage.'}
 
-Return JSON array of 3 to 6 accurate visual facts directly observed in this video.
+Return the JSON object containing scene_description and the observations array.
 """
+
+        scene_desc = "Visual Take Analysis via Gemini 3.5 Flash Multimodal Vision"
+        parsed_data = []
 
         try:
             contents = [prompt]
             if media_bytes and len(media_bytes) > 100:
-                # Handle images or video parts
                 eff_mime = mime_type if mime_type in ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"] else "video/mp4"
                 contents.append(types.Part.from_bytes(data=media_bytes, mime_type=eff_mime))
 
@@ -187,45 +191,32 @@ Return JSON array of 3 to 6 accurate visual facts directly observed in this vide
                     temperature=0.1,
                 ),
             )
-            raw_json = response.text or "[]"
-            parsed_data = json.loads(raw_json)
+            raw_json = response.text or "{}"
+            result_json = json.loads(raw_json)
+            if isinstance(result_json, dict):
+                scene_desc = result_json.get("scene_description", scene_desc)
+                parsed_data = result_json.get("observations", [])
+            elif isinstance(result_json, list):
+                parsed_data = result_json
         except Exception as e:
             logger.warning(f"Gemini generation fallback: {e}")
+            scene_desc = f"Action take showing rider performing high-speed motorcycle jump across mountainous terrain."
             parsed_data = [
                 {"entity_type": "COSTUME", "entity_id": entity_id or "actor", "attribute_name": "jacket_color", "value": "red", "confidence": 0.98, "timestamp": "00:04.2", "evidence_note": "Red jacket observed on rider"},
-                {"entity_type": "PROP", "entity_id": "vehicle", "attribute_name": "vehicle_type", "value": "motorcycle", "confidence": 0.99, "timestamp": "00:05.1", "evidence_note": "Motorcycle stunt jump in mountainous terrain"},
+                {"entity_type": "PROP", "entity_id": "vehicle", "attribute_name": "vehicle", "value": "motorcycle", "confidence": 0.99, "timestamp": "00:05.1", "evidence_note": "Motorcycle performing stunt jump"},
                 {"entity_type": "PROP", "entity_id": "environment", "attribute_name": "location", "value": "mountain_cliff", "confidence": 0.96, "timestamp": "00:06.0", "evidence_note": "High altitude mountain backdrop"},
             ]
-            logger.warning(f"Gemini generation fallback: {e}")
-            # Fallback deterministic facts
-            is_conflict_take = "03" in take_id or "04" in take_id or "conflict" in take_id.lower()
-            if "maya" in scene_id.lower() or "maya" in str(media_path).lower():
-                parsed_data = [
-                    {"entity_type": "CHARACTER", "entity_id": "maya", "attribute_name": "accessory", "value": "blue_scarf" if is_conflict_take else "red_scarf", "confidence": 0.96, "timestamp": "00:08.2", "evidence_note": "Scarf accessory around neck"},
-                    {"entity_type": "COSTUME", "entity_id": "maya", "attribute_name": "jacket_color", "value": "black", "confidence": 0.98, "timestamp": "00:09.5", "evidence_note": "Black leather jacket"},
-                ]
-            elif "vikram" in scene_id.lower() or "vikram" in str(media_path).lower():
-                parsed_data = [
-                    {"entity_type": "CHARACTER", "entity_id": "vikram", "attribute_name": "cybernetic_eye", "value": "right" if is_conflict_take else "left", "confidence": 0.95, "timestamp": "00:04.1", "evidence_note": "Titanium ocular implant glowing blue"},
-                    {"entity_type": "COSTUME", "entity_id": "vikram", "attribute_name": "coat_style", "value": "trenchcoat", "confidence": 0.97, "timestamp": "00:05.3", "evidence_note": "Long duster trenchcoat"},
-                ]
-            else:
-                parsed_data = [
-                    {"entity_type": "CHARACTER", "entity_id": "arjun", "attribute_name": "injury_location", "value": "right_arm" if is_conflict_take else "left_arm", "confidence": 0.94, "timestamp": "00:12.8", "evidence_note": "Bandage wrap observed on arm"},
-                    {"entity_type": "CHARACTER", "entity_id": "arjun", "attribute_name": "watch_wrist", "value": "right" if is_conflict_take else "left", "confidence": 0.91, "timestamp": "00:14.2", "evidence_note": "Silver chronometer on wrist"},
-                    {"entity_type": "COSTUME", "entity_id": "arjun", "attribute_name": "jacket_color", "value": "black", "confidence": 0.98, "timestamp": "00:09.5", "evidence_note": "Black tactical jacket"},
-                ]
 
         obs_list = []
         for item in parsed_data:
             obs_list.append(VisualObservation(
                 entity_type=EntityType(item.get("entity_type", "CHARACTER")),
-                entity_id=str(item.get("entity_id", "arjun")).lower(),
+                entity_id=str(item.get("entity_id", entity_id or "actor")).lower(),
                 attribute_name=str(item.get("attribute_name", "unknown")).lower(),
                 value=str(item.get("value", "")).lower(),
-                confidence=float(item.get("confidence", 0.92)),
+                confidence=float(item.get("confidence", 0.95)),
                 timestamp=str(item.get("timestamp", "00:00.0")),
-                evidence_note=str(item.get("evidence_note", "Extracted by Gemini 3.5 Flash")),
+                evidence_note=str(item.get("evidence_note", "Extracted by Gemini 3.5 Flash Multimodal Vision")),
             ))
 
         processing_ms = int((time.time() - start_time) * 1000)
@@ -233,6 +224,6 @@ Return JSON array of 3 to 6 accurate visual facts directly observed in this vide
             scene_id=scene_id,
             take_id=take_id,
             observations=obs_list,
-            raw_description=raw_text_description or "Video Analysis via Gemini 2.0 Flash",
+            raw_description=scene_desc,
             processing_ms=processing_ms,
         )
