@@ -108,9 +108,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "https://cinestate.vercel.app",
+]
+env_origins = getattr(settings, "allowed_origins", "") or os.environ.get("ALLOWED_ORIGINS", "")
+if env_origins:
+    cors_origins.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
+cors_origins = list(set(cors_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

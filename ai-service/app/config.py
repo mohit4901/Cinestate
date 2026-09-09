@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     ai_service_port: int = 8000
     log_level: str = "info"
     enable_agent_tracing: bool = True
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://cinestate.vercel.app"
 
     # Demo
     demo_mode: bool = True
